@@ -123,6 +123,46 @@ body {
   white-space: nowrap;
 }
 
+#emissionRamp {
+  flex: 1;
+  min-width: 42px;
+  height: 12px;
+  margin: 0 7px;
+  --ramp-core: #b726f6;
+  --ramp-halo: #ee7b30;
+}
+
+#emissionRamp::-webkit-slider-runnable-track {
+  height: 2px;
+  border: 0;
+  background: linear-gradient(90deg, var(--ramp-core), var(--ramp-halo));
+}
+
+#emissionRamp::-webkit-slider-thumb {
+  width: 5px;
+  height: 9px;
+  margin-top: -4px;
+  border: 0;
+  background: var(--toxic-yellow);
+  clip-path: none;
+  box-shadow: none;
+}
+
+#emissionRamp::-moz-range-track {
+  height: 2px;
+  border: 0;
+  background: linear-gradient(90deg, var(--ramp-core), var(--ramp-halo));
+}
+
+#emissionRamp::-moz-range-thumb {
+  width: 5px;
+  height: 9px;
+  border: 0;
+  background: var(--toxic-yellow);
+  clip-path: none;
+  box-shadow: none;
+}
+
 .colorWellControl {
   display: flex;
   gap: 6px;
@@ -499,6 +539,7 @@ var controls=
 	hue : 15,
 	coreColor : "#b726f6",
 	haloColor : "#ee7b30",
+	emissionRamp : 0.5,
 	aspectWidth : 9,
 	aspectHeight : 6,
 	freezeImage: false,
@@ -839,10 +880,14 @@ var updateAspectRatio = function()
 <div id="emissionControls">
 <div id="emissionColorRow">
 <label class="colorWellControl">CORE COLOR
-<input id="coreColor" type="color" value="#b726f6" oninput="controls.coreColor=this.value">
+<input id="coreColor" type="color" value="#b726f6"
+oninput="controls.coreColor=this.value; updateEmissionRamp()">
 </label>
+<input id="emissionRamp" type="range" min="0" max="1" value="0.5" step="0.01"
+aria-label="Core to halo balance" oninput="controls.emissionRamp=this.value">
 <label class="colorWellControl">HALO COLOR
-<input id="haloColor" type="color" value="#ee7b30" oninput="controls.haloColor=this.value">
+<input id="haloColor" type="color" value="#ee7b30"
+oninput="controls.haloColor=this.value; updateEmissionRamp()">
 </label>
 </div>
 <label id="persistenceControl">
@@ -865,6 +910,13 @@ value=" export current settings as a URL">
 &nbsp<a href="javascript:restoreDefaults();">[reset all]</a>
 
 <script>
+
+var updateEmissionRamp = function()
+{
+    emissionRamp.style.setProperty('--ramp-core', coreColor.value);
+    emissionRamp.style.setProperty('--ramp-halo', haloColor.value);
+};
+updateEmissionRamp();
 
 var Controls = {
     generateUrl : function()
@@ -901,6 +953,7 @@ var Controls = {
       // don't try to record microphone status
       a.push(coreColor.value.substring(1));
       a.push(haloColor.value.substring(1));
+      a.push(emissionRamp.value);
       a.push(persistence.value);
       a.push(0+disableFilter.checked);
       a.push(0+hideGrid.checked);
@@ -915,6 +968,7 @@ var Controls = {
         var arrayString = decodeURI(hash);
         var a = arrayString.split(',');
         var legacyHueSettings = a.length === 18;
+        var hasEmissionRamp = a.length >= 20;
         this.setupSlider(mainGain, a.shift());
         this.setupSlider(exposure, a.shift());
         //this.setupSlider(audioVolume, a.shift());
@@ -940,6 +994,7 @@ var Controls = {
             this.setupColor(coreColor, a.shift());
             this.setupColor(haloColor, a.shift());
         }
+        if (hasEmissionRamp) this.setupSlider(emissionRamp, a.shift());
         this.setupSlider(persistence, a.shift());
         this.setupCheckbox(disableFilter, a.shift());
         this.setupCheckbox(hideGrid, a.shift());
@@ -1285,6 +1340,7 @@ appShell.addEventListener('click', function(event)
     uniform float uExposure;
     uniform vec3 uCoreColour;
     uniform vec3 uHaloColour;
+    uniform float uEmissionRamp;
     varying vec2 vTexCoord;
     varying vec2 vTexCoordCanvas;
     void main (void)
@@ -1304,7 +1360,8 @@ appShell.addEventListener('click', function(event)
             light += 0.4*scatter.g * (2.0+1.0*screen.g + 0.5*screen.r);
             float tlight = 1.0-pow(2.0, -uExposure*light);
             float tlight2 = tlight*tlight*tlight;
-            gl_FragColor.rgb = mix(uHaloColour, uCoreColour, 0.3+tlight2*tlight2*0.5)*tlight;
+            float coreMix = clamp(0.05+uEmissionRamp*0.5+tlight2*tlight2*0.5, 0.0, 1.0);
+            gl_FragColor.rgb = mix(uHaloColour, uCoreColour, coreMix)*tlight;
             gl_FragColor.a= 1.0;
         }
     }

@@ -329,6 +329,7 @@ var Render =
 		this.outputShader.uExposure = gl.getUniformLocation(this.outputShader, "uExposure");
 		this.outputShader.uCoreColour = gl.getUniformLocation(this.outputShader, "uCoreColour");
 		this.outputShader.uHaloColour = gl.getUniformLocation(this.outputShader, "uHaloColour");
+		this.outputShader.uEmissionRamp = gl.getUniformLocation(this.outputShader, "uEmissionRamp");
 		this.outputShader.uResizeForCanvas = gl.getUniformLocation(this.outputShader, "uResizeForCanvas");
 		this.outputShader.uCanvasAspect = gl.getUniformLocation(this.outputShader, "uCanvasAspect");
 
@@ -484,6 +485,7 @@ var Render =
 		gl.uniform1f(this.outputShader.uCanvasAspect, this.canvas.width/this.canvas.height);
 		gl.uniform3fv(this.outputShader.uCoreColour, this.getColourFromHex(controls.coreColor));
 		gl.uniform3fv(this.outputShader.uHaloColour, this.getColourFromHex(controls.haloColor));
+		gl.uniform1f(this.outputShader.uEmissionRamp, controls.emissionRamp);
 		this.drawTexture(this.lineTexture, this.blur1Texture, this.blur3Texture, this.screenTexture);
 	},
 
