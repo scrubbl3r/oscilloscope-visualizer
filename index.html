@@ -3,12 +3,12 @@
 <style>
 :root {
   color-scheme: dark;
-  --slate-950: #111111;
-  --slate-900: #191919;
-  --slate-850: #222222;
-  --slate-800: #2b2b2b;
-  --slate-750: #343434;
-  --slate-650: #494949;
+  --slate-950: #0b0b0b;
+  --slate-900: #121212;
+  --slate-850: #1b1b1b;
+  --slate-800: #242424;
+  --slate-750: #2d2d2d;
+  --slate-650: #424242;
   --text: #ef4a1b;
   --text-dim: #9b3f25;
   --hot-orange: #ff3b0a;
@@ -86,15 +86,43 @@ output {
   font-variant-numeric: tabular-nums;
 }
 
-#playFileSection,
 #displaySection {
   width: 100%;
 }
 
-#playFileSection td:first-child,
 #displaySection td:first-child {
   width: 88px;
   white-space: nowrap;
+}
+
+#playFileSection {
+  display: flex;
+  align-items: center;
+  min-height: 24px;
+}
+
+#audioFile {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+#audioFileButton {
+  display: inline-block;
+  padding: 4px 10px;
+  color: #000;
+  background: var(--hot-orange);
+  clip-path: polygon(4px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 4px);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  cursor: pointer;
+}
+
+#audioFileButton:hover {
+  background: #ff6a36;
 }
 
 b {
@@ -133,10 +161,8 @@ input[type="number"] {
   min-height: 22px;
   padding: 2px 6px;
   color: #ff6938;
-  background:
-    linear-gradient(#000, #000) padding-box,
-    linear-gradient(var(--hot-orange), var(--hot-orange)) border-box;
-  border: 1px solid transparent;
+  background: #000;
+  border: 0;
   border-radius: 0;
   clip-path: polygon(
     5px 0,
@@ -201,22 +227,6 @@ input[type="range"]::-moz-range-thumb {
   border-radius: 0;
   clip-path: polygon(3px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 3px);
   box-shadow: 0 0 8px rgba(255, 59, 10, 0.42);
-}
-
-input[type="file"] {
-  color: var(--text-dim);
-}
-
-input[type="file"]::file-selector-button {
-  padding: 3px 7px;
-  color: var(--slate-950);
-  background: var(--toxic-yellow);
-  border: 0;
-  border-radius: 0;
-  clip-path: polygon(4px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 4px);
-  font-weight: 750;
-  letter-spacing: 0.04em;
-  cursor: pointer;
 }
 
 audio {
@@ -499,24 +509,30 @@ or <a href="https://github.com/mattingalls/Soundflower">Soundflower</a> with
 
 <hr noshade>
 
-<table id="playFileSection">
-<tr>
-<td><b style="font-size:18px"> PLAY FILE<b></td>
-<td><input id="audioFile" type="file" accept="audio/*" /></td>
-</tr>
-</table>
+<div id="playFileSection">
+<label id="audioFileButton" for="audioFile">CHOOSE FILE</label>
+<input id="audioFile" type="file" accept="audio/*" />
+</div>
 
 <p><audio id="audioElement" controls></audio>
 
 <script>
 var file;
-audioFile.onchange = function()
+var audioFileInput = document.getElementById('audioFile');
+var audioElementControl = document.getElementById('audioElement');
+
+var loadAudioFile = function(audioFileToLoad)
 {
-	if (file) URL.revokeObjectURL(file)
-    var files = this.files;
-    file = URL.createObjectURL(files[0]);
-    audioElement.src = file;
-    audioElement.play();
+    if (!audioFileToLoad) return;
+    if (file) URL.revokeObjectURL(file)
+    file = URL.createObjectURL(audioFileToLoad);
+    audioElementControl.src = file;
+    audioElementControl.play().catch(function() {});
+};
+
+audioFileInput.onchange = function()
+{
+    loadAudioFile(this.files[0]);
 };
 </script>
 
@@ -734,6 +750,19 @@ document.addEventListener('keydown', function(event)
 });
 
 var appShell = document.getElementById('appShell');
+
+appShell.addEventListener('dragover', function(event)
+{
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'copy';
+});
+
+appShell.addEventListener('drop', function(event)
+{
+    event.preventDefault();
+    event.stopPropagation();
+    loadAudioFile(event.dataTransfer.files[0]);
+});
 
 appShell.addEventListener('mousedown', function(event)
 {
