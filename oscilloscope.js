@@ -397,11 +397,21 @@ var Render =
 	{
 		var windowWidth = Math.max(document.documentElement.clientWidth, window.innerWidth || 0)
 		var windowHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0)
-		var availableWidth = Math.max(1, windowWidth-UI.sidebarWidth-70);
-		var availableHeight = Math.max(1, windowHeight-21);
-		var aspectRatio = controls.aspectWidth/controls.aspectHeight;
-		var canvasWidth = Math.min(availableWidth, availableHeight*aspectRatio);
-		var canvasHeight = canvasWidth/aspectRatio;
+		var canvasWidth;
+		var canvasHeight;
+		if (document.body.classList.contains('full-screen-mode'))
+		{
+			canvasWidth = windowWidth;
+			canvasHeight = windowHeight;
+		}
+		else
+		{
+			var availableWidth = Math.max(1, windowWidth-UI.sidebarWidth-70);
+			var availableHeight = Math.max(1, windowHeight-21);
+			var aspectRatio = controls.aspectWidth/controls.aspectHeight;
+			canvasWidth = Math.min(availableWidth, availableHeight*aspectRatio);
+			canvasHeight = canvasWidth/aspectRatio;
+		}
 		Render.canvas.width = Math.floor(canvasWidth);
 		Render.canvas.height = Math.floor(canvasHeight);
 		if (Render.lineTexture)

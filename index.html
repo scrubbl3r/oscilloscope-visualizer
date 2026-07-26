@@ -8,6 +8,28 @@ table {
   border-spacing:0;
   border-collapse: collapse;
 }
+body.full-screen-mode {
+  margin: 0;
+  overflow: hidden;
+  background: black;
+}
+body.full-screen-mode #appShell {
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+}
+body.full-screen-mode #viewportCell {
+  width: 100vw;
+  height: 100vh;
+  padding: 0;
+}
+body.full-screen-mode #controlsPanel {
+  display: none;
+}
+body.full-screen-mode #crtCanvas {
+  display: block;
+  margin: 0;
+}
 
 </style>
 </head>
@@ -61,16 +83,16 @@ var toggleVisible = function(string)
 </script>
 
 
-<table align="center">
+<table id="appShell" align="center">
 <tr>
 
-<td valign="top">
+<td id="viewportCell" valign="top">
 <canvas id="crtCanvas" width="800" height="800"></canvas>
 <b id="clicktostart" style="position: absolute; z-index: 1; left: 100px; top: 50px; width:200px; height:40px; font-size:18px; color: rgb(116, 187, 116);">
     [CLICK  TO START]
 </b>
 </td>
-<td width="360" valign="top">
+<td id="controlsPanel" width="360" valign="top">
 
 <br>
 
@@ -444,6 +466,50 @@ var Controls = {
 </td>
 </tr>
 </table>
+
+<script>
+var fullScreenMode = false;
+var holdToToggleTimer = null;
+
+var toggleFullScreenMode = function()
+{
+    fullScreenMode = !fullScreenMode;
+    document.body.classList.toggle('full-screen-mode', fullScreenMode);
+    if (window.Render && Render.canvas) Render.onResize();
+};
+
+document.addEventListener('keydown', function(event)
+{
+    var target = event.target;
+    var isEditing = target.matches('input, textarea, select') || target.isContentEditable;
+    if (isEditing || event.repeat || event.ctrlKey || event.metaKey || event.altKey) return;
+    if (event.key.toLowerCase() !== 's') return;
+    event.preventDefault();
+    toggleFullScreenMode();
+});
+
+var appShell = document.getElementById('appShell');
+
+appShell.addEventListener('mousedown', function(event)
+{
+    if (event.button !== 0) return;
+    clearTimeout(holdToToggleTimer);
+    holdToToggleTimer = setTimeout(function()
+    {
+        holdToToggleTimer = null;
+        toggleFullScreenMode();
+    }, 3000);
+});
+
+var cancelHoldToToggle = function()
+{
+    clearTimeout(holdToToggleTimer);
+    holdToToggleTimer = null;
+};
+
+appShell.addEventListener('mouseleave', cancelHoldToToggle);
+document.addEventListener('mouseup', cancelHoldToToggle);
+</script>
 
 
 <script id="vertex" type="x-shader">
