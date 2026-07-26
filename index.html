@@ -1,13 +1,210 @@
 <!DOCTYPE html>
 <head>
 <style>
-audio { width: 100%; }
-body{font: 12px Courier, Monospace;}
-canvas{margin-right: 10px;}
+:root {
+  color-scheme: dark;
+  --slate-950: #0b1013;
+  --slate-900: #10171b;
+  --slate-850: #151e23;
+  --slate-800: #1a252b;
+  --slate-750: #202d33;
+  --slate-650: #34434a;
+  --text: #c4cdd1;
+  --text-dim: #7f8d93;
+  --hot-orange: #ff4f1f;
+  --hot-red: #e52b18;
+  --toxic-yellow: #e7f23b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--slate-950);
+  color: var(--text);
+  font: 12px/1.35 Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  letter-spacing: 0.015em;
+}
+
+#appShell {
+  background: var(--slate-900);
+  border: 1px solid var(--slate-650);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.55);
+}
+
+#controlsPanel {
+  width: 380px;
+  padding: 14px 16px 18px;
+  background: var(--slate-850);
+  border-left: 1px solid var(--slate-650);
+}
+
+#title {
+  color: #edf1f2;
+  font-weight: 750;
+  letter-spacing: 0.09em;
+}
+
+#samplerate,
+output {
+  color: var(--toxic-yellow);
+  font-variant-numeric: tabular-nums;
+}
+
+#playFileSection,
+#displaySection {
+  width: 100%;
+}
+
+#playFileSection td:first-child,
+#displaySection td:first-child {
+  width: 105px;
+  white-space: nowrap;
+}
+
+b {
+  font-weight: 700;
+  letter-spacing: 0.055em;
+}
+
+canvas {
+  display: block;
+  margin-right: 12px;
+  background: black;
+  outline: 1px solid #263239;
+}
+
+#clicktostart {
+  color: var(--hot-orange) !important;
+  text-shadow: 0 0 14px rgba(255, 79, 31, 0.65);
+}
+
+hr {
+  height: 1px;
+  margin: 13px 0;
+  border: 0;
+  background: var(--slate-650);
+}
+
+input,
+button,
+select,
+textarea {
+  font: inherit;
+}
+
+input[type="text"],
+input[type="number"] {
+  min-height: 25px;
+  padding: 3px 7px;
+  color: #e4eaec;
+  background: var(--slate-800);
+  border: 1px solid var(--slate-650);
+  border-radius: 2px;
+  outline: none;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus {
+  border-color: var(--toxic-yellow);
+  box-shadow: 0 0 0 1px rgba(231, 242, 59, 0.18);
+}
+
+input[type="checkbox"] {
+  accent-color: var(--hot-orange);
+}
+
+input[type="range"] {
+  height: 18px;
+  margin: 2px 0;
+  accent-color: var(--hot-orange);
+  background: transparent;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  background: var(--slate-750);
+  border: 1px solid #3a4b52;
+  border-radius: 0;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  width: 13px;
+  height: 13px;
+  margin-top: -5px;
+  appearance: none;
+  background: var(--hot-orange);
+  border: 1px solid #ff7953;
+  border-radius: 1px;
+  box-shadow: 0 0 8px rgba(255, 79, 31, 0.34);
+}
+
+input[type="range"]::-moz-range-track {
+  height: 4px;
+  background: var(--slate-750);
+  border: 1px solid #3a4b52;
+  border-radius: 0;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 13px;
+  height: 13px;
+  background: var(--hot-orange);
+  border: 1px solid #ff7953;
+  border-radius: 1px;
+  box-shadow: 0 0 8px rgba(255, 79, 31, 0.34);
+}
+
+input[type="file"] {
+  color: var(--text-dim);
+}
+
+input[type="file"]::file-selector-button {
+  padding: 5px 9px;
+  color: var(--slate-950);
+  background: var(--toxic-yellow);
+  border: 0;
+  border-radius: 2px;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+
+audio {
+  width: 100%;
+  height: 34px;
+  opacity: 0.82;
+}
+
+a {
+  color: var(--toxic-yellow);
+  text-decoration-color: rgba(231, 242, 59, 0.42);
+  text-underline-offset: 2px;
+}
+
+a:hover {
+  color: #f6ff69;
+}
+
 table {
   border-spacing:0;
   border-collapse: collapse;
 }
+
+td {
+  color: inherit;
+}
+
+::selection {
+  color: var(--slate-950);
+  background: var(--toxic-yellow);
+}
+
+html {
+  scrollbar-color: var(--slate-650) var(--slate-950);
+}
+
 body.full-screen-mode {
   margin: 0;
   overflow: hidden;
@@ -254,10 +451,10 @@ or <a href="https://github.com/mattingalls/Soundflower">Soundflower</a> with
 
 <hr noshade>
 
-<table>
+<table id="playFileSection">
 <tr>
-<td width=200><b style="font-size:18px"> PLAY FILE<b></td>
-<td width=200><input id="audioFile" type="file" accept="audio/*" /></td>
+<td><b style="font-size:18px"> PLAY FILE<b></td>
+<td><input id="audioFile" type="file" accept="audio/*" /></td>
 </tr>
 </table>
 
@@ -277,10 +474,10 @@ audioFile.onchange = function()
 
 <hr noshade>
 
-<table>
+<table id="displaySection">
 <tr>
-<td width=200><b style="font-size:18px"> DISPLAY</b></td>
-<td width=200>
+<td><b style="font-size:18px"> DISPLAY</b></td>
+<td>
 <input id="aspectWidth" aria-label="Viewport aspect ratio width" type="number" min="1" max="100" step="1" value="9" style="width:48px"
 oninput="updateAspectRatio()">
 :
