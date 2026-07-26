@@ -787,6 +787,7 @@ var audioSeek = document.getElementById('audioSeek');
 var audioCurrentTime = document.getElementById('audioCurrentTime');
 var audioDuration = document.getElementById('audioDuration');
 var startMessage = document.getElementById('clicktostart');
+var startupAudioPickerArmed = true;
 
 var formatAudioTime = function(seconds)
 {
@@ -819,12 +820,18 @@ var loadAudioFile = function(audioFileToLoad)
     audioLoop.setAttribute('aria-pressed', 'true');
     audioElementControl.play().catch(function() {});
     if (startMessage) startMessage.remove();
+    startupAudioPickerArmed = false;
+    document.removeEventListener('click', openStartupAudioPicker, true);
 };
 
-startMessage.addEventListener('click', function()
+var openStartupAudioPicker = function(event)
 {
+    if (!startupAudioPickerArmed || event.detail === 0 || event.target === audioFileInput) return;
+    event.preventDefault();
+    event.stopPropagation();
     audioFileInput.click();
-});
+};
+document.addEventListener('click', openStartupAudioPicker, true);
 
 audioFileInput.onchange = function()
 {
