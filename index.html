@@ -1531,9 +1531,10 @@ appShell.addEventListener('click', function(event)
             tlight = clamp(tlight*(1.0+uSpectralAmount*0.75*spectralPulse), 0.0, 1.0);
             float tlight2 = tlight*tlight*tlight;
             float baseCoreMix = clamp(0.05+uEmissionRamp*0.5+tlight2*tlight2*0.5, 0.0, 1.0);
-            float spectralTotal = max(0.001, uSpectralBands.x+uSpectralBands.y+uSpectralBands.z);
-            float frequencyMix = (0.5*uSpectralBands.y+uSpectralBands.z)/spectralTotal;
-            float spectralMix = clamp(uSpectralAmount*spectralDrive*1.35, 0.0, 1.0);
+            vec3 spectralWeights = pow(uSpectralBands, vec3(3.0));
+            float spectralTotal = max(0.001, spectralWeights.x+spectralWeights.y+spectralWeights.z);
+            float frequencyMix = (0.5*spectralWeights.y+spectralWeights.z)/spectralTotal;
+            float spectralMix = clamp(uSpectralAmount*sqrt(spectralDrive)*1.5, 0.0, 1.0);
             float coreMix = mix(baseCoreMix, frequencyMix, spectralMix);
             vec3 emissionColour = mix(uHaloColour, uCoreColour, coreMix);
             vec3 sceneColour = mix(uBackgroundColour, emissionColour, tlight);

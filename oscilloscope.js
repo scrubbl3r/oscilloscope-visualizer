@@ -573,26 +573,23 @@ var Render =
 		{
 			var firstBin = Math.max(1, Math.floor(ranges[band][0]/binHz));
 			var lastBin = Math.min(AudioSystem.frequencyData.length-1, Math.ceil(ranges[band][1]/binHz));
-			var sum = 0;
-			var peaks = [0, 0, 0, 0, 0, 0];
-			for (var bin=firstBin; bin<=lastBin; bin++)
+			var bucketEnergies = [];
+			var bucketCount = 6;
+			for (var bucket=0; bucket<bucketCount; bucket++)
 			{
-				var value = AudioSystem.frequencyData[bin]/255;
-				sum += value*value;
-				for (var peak=0; peak<peaks.length; peak++)
+				var bucketStart = Math.floor(firstBin*Math.pow(lastBin/firstBin, bucket/bucketCount));
+				var bucketEnd = Math.max(bucketStart, Math.floor(firstBin*Math.pow(lastBin/firstBin, (bucket+1)/bucketCount)));
+				var sum = 0;
+				for (var bin=bucketStart; bin<=bucketEnd; bin++)
 				{
-					if (value > peaks[peak])
-					{
-						peaks.splice(peak, 0, value);
-						peaks.pop();
-						break;
-					}
+					var value = AudioSystem.frequencyData[bin]/255;
+					sum += value*value;
 				}
+				bucketEnergies.push(Math.sqrt(sum/Math.max(1, bucketEnd-bucketStart+1)));
 			}
-			var peakEnergy = peaks.reduce(function(total, value) { return total+value; }, 0)/peaks.length;
-			var rmsEnergy = Math.sqrt(sum/Math.max(1, lastBin-firstBin+1));
-			var energy = Math.max(peakEnergy, rmsEnergy*2.5);
-			energy = Math.max(0, Math.min(1, (energy-0.025)/0.72));
+			bucketEnergies.sort(function(a, b) { return b-a; });
+			var energy = 0.65*bucketEnergies[0]+0.35*bucketEnergies[1];
+			energy = Math.max(0, Math.min(1, (energy-0.02)/0.58));
 			var smoothing = energy > this.spectralBands[band] ? 0.48 : 0.12;
 			this.spectralBands[band] += (energy-this.spectralBands[band])*smoothing;
 		}
