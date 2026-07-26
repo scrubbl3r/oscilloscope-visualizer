@@ -654,10 +654,15 @@ var Controls = {
     varying vec2 vTexCoord;
     varying vec2 vTexCoordCanvas;
     uniform float uResizeForCanvas;
+    uniform float uCanvasAspect;
     void main (void)
     {
         gl_Position = vec4(aPos, 0.0, 1.0);
         vTexCoord = (0.5*aPos+0.5);
+        if (uCanvasAspect > 1.0)
+            vTexCoord.x = (vTexCoord.x-0.5)*uCanvasAspect+0.5;
+        else
+            vTexCoord.y = (vTexCoord.y-0.5)/uCanvasAspect+0.5;
         vTexCoordCanvas = vTexCoord*uResizeForCanvas;
     }
 </script>
@@ -674,17 +679,24 @@ var Controls = {
     varying vec2 vTexCoordCanvas;
     void main (void)
     {
-    	vec4 line = texture2D(uTexture0, vTexCoordCanvas);
-    	// r components have grid; g components do not.
-    	vec4 screen = texture2D(uTexture3, vTexCoord);
-    	vec4 tightGlow = texture2D(uTexture1, vTexCoord);
-    	vec4 scatter = texture2D(uTexture2, vTexCoord)+0.35;
-    	float light = line.r + 1.5*screen.g*screen.g*tightGlow.r;
-    	light += 0.4*scatter.g * (2.0+1.0*screen.g + 0.5*screen.r);
-    	float tlight = 1.0-pow(2.0, -uExposure*light);
-    	float tlight2 = tlight*tlight*tlight;
-    	gl_FragColor.rgb = mix(uColour, vec3(1.0), 0.3+tlight2*tlight2*0.5)*tlight;
-        gl_FragColor.a= 1.0;
+        if (vTexCoord.x < 0.0 || vTexCoord.x > 1.0 || vTexCoord.y < 0.0 || vTexCoord.y > 1.0)
+        {
+            gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+        }
+        else
+        {
+            vec4 line = texture2D(uTexture0, vTexCoordCanvas);
+            // r components have grid; g components do not.
+            vec4 screen = texture2D(uTexture3, vTexCoord);
+            vec4 tightGlow = texture2D(uTexture1, vTexCoord);
+            vec4 scatter = texture2D(uTexture2, vTexCoord)+0.35;
+            float light = line.r + 1.5*screen.g*screen.g*tightGlow.r;
+            light += 0.4*scatter.g * (2.0+1.0*screen.g + 0.5*screen.r);
+            float tlight = 1.0-pow(2.0, -uExposure*light);
+            float tlight2 = tlight*tlight*tlight;
+            gl_FragColor.rgb = mix(uColour, vec3(1.0), 0.3+tlight2*tlight2*0.5)*tlight;
+            gl_FragColor.a= 1.0;
+        }
     }
 </script>
 

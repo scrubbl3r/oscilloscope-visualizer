@@ -329,6 +329,7 @@ var Render =
 		this.outputShader.uExposure = gl.getUniformLocation(this.outputShader, "uExposure");
 		this.outputShader.uColour = gl.getUniformLocation(this.outputShader, "uColour");
 		this.outputShader.uResizeForCanvas = gl.getUniformLocation(this.outputShader, "uResizeForCanvas");
+		this.outputShader.uCanvasAspect = gl.getUniformLocation(this.outputShader, "uCanvasAspect");
 
 		this.texturedShader = this.createShader("texturedVertexWithResize","texturedFragment");
 		this.texturedShader.aPos = gl.getAttribLocation(this.texturedShader, "aPos");
@@ -469,6 +470,7 @@ var Render =
 		//if (controls.disableFilter) brightness *= Filter.steps;
 		gl.uniform1f(this.outputShader.uExposure, brightness);
 		gl.uniform1f(this.outputShader.uResizeForCanvas, this.lineTexture.width/1024);
+		gl.uniform1f(this.outputShader.uCanvasAspect, this.canvas.width/this.canvas.height);
 		var colour = this.getColourFromHue(controls.hue);
 		gl.uniform3fv(this.outputShader.uColour, colour);
 		this.drawTexture(this.lineTexture, this.blur1Texture, this.blur3Texture, this.screenTexture);
