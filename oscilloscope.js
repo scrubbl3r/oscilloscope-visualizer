@@ -945,14 +945,25 @@ var ySamples = new Float32Array(1024);
 UI.init();
 Render.init();
 
-document.onclick = function(){ // quick fix to get around autoplay rules, May 2022 
-	document.onclick = null;
-	document.getElementById("clicktostart").remove();
+var appActivated = false;
+
+var activateApp = function()
+{
+	if (appActivated) return;
+	appActivated = true;
+	document.removeEventListener("pointerdown", activateApp, true);
+	document.removeEventListener("keydown", activateApp, true);
+	document.removeEventListener("click", activateApp, true);
 	//Filter.init(512, 10, 4);
 	Filter.init(1024, 8, 6);
 	AudioSystem.init(1024);
 	Render.setupArrays(Filter.nSmoothedSamples);
 	AudioSystem.startSound();
+	AudioSystem.audioContext.resume().catch(function() {});
 	requestAnimationFrame(drawCRTFrame);
 	Controls.setupControls();
 };
+
+document.addEventListener("pointerdown", activateApp, true);
+document.addEventListener("keydown", activateApp, true);
+document.addEventListener("click", activateApp, true);
