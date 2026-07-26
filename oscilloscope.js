@@ -319,6 +319,7 @@ var Render =
 		this.lineShader.uNEdges = gl.getUniformLocation(this.lineShader, "uNEdges");
 		this.lineShader.uFadeAmount = gl.getUniformLocation(this.lineShader, "uFadeAmount");
 		this.lineShader.uScreen = gl.getUniformLocation(this.lineShader, "uScreen");
+		this.lineShader.uCanvasAspect = gl.getUniformLocation(this.lineShader, "uCanvasAspect");
 
 		this.outputShader = this.createShader("outputVertex","outputFragment");
 		this.outputShader.aPos = gl.getAttribLocation(this.outputShader, "aPos");
@@ -330,13 +331,11 @@ var Render =
 		this.outputShader.uCoreColour = gl.getUniformLocation(this.outputShader, "uCoreColour");
 		this.outputShader.uHaloColour = gl.getUniformLocation(this.outputShader, "uHaloColour");
 		this.outputShader.uEmissionRamp = gl.getUniformLocation(this.outputShader, "uEmissionRamp");
-		this.outputShader.uResizeForCanvas = gl.getUniformLocation(this.outputShader, "uResizeForCanvas");
 		this.outputShader.uCanvasAspect = gl.getUniformLocation(this.outputShader, "uCanvasAspect");
 
-		this.texturedShader = this.createShader("texturedVertexWithResize","texturedFragment");
+		this.texturedShader = this.createShader("texturedVertex","texturedFragment");
 		this.texturedShader.aPos = gl.getAttribLocation(this.texturedShader, "aPos");
 		this.texturedShader.uTexture0 = gl.getUniformLocation(this.texturedShader, "uTexture0");
-		this.texturedShader.uResizeForCanvas = gl.getUniformLocation(this.texturedShader, "uResizeForCanvas");
 
 		this.blurShader = this.createShader("texturedVertex","blurFragment");
 		this.blurShader.aPos = gl.getAttribLocation(this.blurShader, "aPos");
@@ -387,11 +386,11 @@ var Render =
 	{
 		this.frameBuffer = gl.createFramebuffer();
 		this.lineTexture = this.makeTexture(1024, 1024);
-		this.onResize();
 		this.blur1Texture = this.makeTexture(256,256);
 		this.blur2Texture = this.makeTexture(256, 256);
 		this.blur3Texture = this.makeTexture(32, 32);
 		this.blur4Texture = this.makeTexture(32, 32);
+		this.onResize();
 		this.screenTexture = this.loadTexture('noise.jpg');
 	},
 
@@ -418,12 +417,27 @@ var Render =
 		Render.canvas.height = Math.floor(canvasHeight);
 		if (Render.lineTexture)
 		{
-			var renderSize = Math.min(canvasWidth, canvasHeight, 1024);
-			Render.lineTexture.width = renderSize;
-			Render.lineTexture.height = renderSize;
-			//testOutputElement.value = windowHeight;
+			Render.resizeRenderTextures();
 		}
 
+	},
+
+	resizeRenderTextures : function()
+	{
+		var aspect = this.canvas.width/this.canvas.height;
+		var dimensions = function(size)
+		{
+			if (aspect >= 1) return [size, Math.max(1, Math.round(size/aspect))];
+			return [Math.max(1, Math.round(size*aspect)), size];
+		};
+		var lineSize = dimensions(1024);
+		var tightGlowSize = dimensions(256);
+		var wideGlowSize = dimensions(32);
+		this.resizeTexture(this.lineTexture, lineSize[0], lineSize[1]);
+		this.resizeTexture(this.blur1Texture, tightGlowSize[0], tightGlowSize[1]);
+		this.resizeTexture(this.blur2Texture, tightGlowSize[0], tightGlowSize[1]);
+		this.resizeTexture(this.blur3Texture, wideGlowSize[0], wideGlowSize[1]);
+		this.resizeTexture(this.blur4Texture, wideGlowSize[0], wideGlowSize[1]);
 	},
 
 	drawLineTexture : function(xPoints, yPoints)
@@ -433,8 +447,6 @@ var Render =
 		this.fade();
 		//gl.clear(gl.COLOR_BUFFER_BIT);
 		this.drawLine(xPoints, yPoints);
-		gl.bindTexture(gl.TEXTURE_2D, this.targetTexture);
-		gl.generateMipmap(gl.TEXTURE_2D);
 	},
 
 	drawCRT : function()
@@ -443,37 +455,35 @@ var Render =
 
 		this.activateTargetTexture(this.blur1Texture);
 		this.setShader(this.texturedShader);
-		gl.uniform1f(this.texturedShader.uResizeForCanvas, this.lineTexture.width/1024);
 		this.drawTexture(this.lineTexture);
 
 		//horizontal blur 256x256
 		this.activateTargetTexture(this.blur2Texture);
 		this.setShader(this.blurShader);
-		gl.uniform2fv(this.blurShader.uOffset, [1.0/256.0, 0.0]);
+		gl.uniform2fv(this.blurShader.uOffset, [1.0/this.blur2Texture.width, 0.0]);
 		this.drawTexture(this.blur1Texture);
 
 		//vertical blur 256x256
 		this.activateTargetTexture(this.blur1Texture);
 		//this.setShader(this.blurShader);
-		gl.uniform2fv(this.blurShader.uOffset, [0.0, 1.0/256.0]);
+		gl.uniform2fv(this.blurShader.uOffset, [0.0, 1.0/this.blur1Texture.height]);
 		this.drawTexture(this.blur2Texture);
 
 		//preserve blur1 for later
 		this.activateTargetTexture(this.blur3Texture);
 		this.setShader(this.texturedShader);
-		gl.uniform1f(this.texturedShader.uResizeForCanvas, 1.0);
 		this.drawTexture(this.blur1Texture);
 
 		//horizontal blur 64x64
 		this.activateTargetTexture(this.blur4Texture);
 		this.setShader(this.blurShader);
-		gl.uniform2fv(this.blurShader.uOffset, [1.0/32.0, 1.0/60.0]);
+		gl.uniform2fv(this.blurShader.uOffset, [1.0/this.blur4Texture.width, 0.0]);
 		this.drawTexture(this.blur3Texture);
 
 		//vertical blur 64x64
 		this.activateTargetTexture(this.blur3Texture);
 		//this.setShader(this.blurShader);
-		gl.uniform2fv(this.blurShader.uOffset, [-1.0/60.0, 1.0/32.0]);
+		gl.uniform2fv(this.blurShader.uOffset, [0.0, 1.0/this.blur3Texture.height]);
 		this.drawTexture(this.blur4Texture);
 
 		this.activateTargetTexture(null);
@@ -481,7 +491,6 @@ var Render =
 		var brightness = Math.pow(2, controls.exposureStops-2.0);
 		//if (controls.disableFilter) brightness *= Filter.steps;
 		gl.uniform1f(this.outputShader.uExposure, brightness);
-		gl.uniform1f(this.outputShader.uResizeForCanvas, this.lineTexture.width/1024);
 		gl.uniform1f(this.outputShader.uCanvasAspect, this.canvas.width/this.canvas.height);
 		gl.uniform3fv(this.outputShader.uCoreColour, this.getColourFromHex(controls.coreColor));
 		gl.uniform3fv(this.outputShader.uHaloColour, this.getColourFromHex(controls.haloColor));
@@ -559,11 +568,6 @@ var Render =
 		gl.drawArrays(gl.TRIANGLES, 0, 6);
 		gl.disableVertexAttribArray(this.program.aPos);
 
-		if (this.targetTexture)
-		{
-			gl.bindTexture(gl.TEXTURE_2D, this.targetTexture);
-			gl.generateMipmap(gl.TEXTURE_2D);
-		}
 	},
 
 	drawLine : function(xPoints, yPoints)
@@ -611,6 +615,7 @@ var Render =
 
 		gl.uniform1f(program.uSize, 0.015);
 		gl.uniform1f(program.uGain, Math.pow(2.0,controls.mainGain)*450/512);
+		gl.uniform1f(program.uCanvasAspect, this.canvas.width/this.canvas.height);
 		if (controls.invertXY) gl.uniform1f(program.uInvert, -1.0);
 		else gl.uniform1f(program.uInvert, 1.0);
 		if (controls.disableFilter) gl.uniform1f(program.uIntensity, 0.005*(Filter.steps+1.5));
@@ -737,8 +742,6 @@ var Render =
 		gl.lineWidth(1.0);
 		gl.drawArrays(gl.LINES, 0, vertices.length/2);
 
-		gl.bindTexture(gl.TEXTURE_2D, this.targetTexture);
-		gl.generateMipmap(gl.TEXTURE_2D);
 		gl.colorMask(true, true, true, true);
 	},
 
@@ -749,15 +752,23 @@ var Render =
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.FLOAT, null);
 		//gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, Render.ext.HALF_FLOAT_OES, null);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-		//gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-		gl.generateMipmap(gl.TEXTURE_2D);
 		gl.bindTexture(gl.TEXTURE_2D, null);
 		texture.width = width;
 		texture.height = height;
 		return texture;
+	},
+
+	resizeTexture : function(texture, width, height)
+	{
+		if (texture.width === width && texture.height === height) return;
+		gl.bindTexture(gl.TEXTURE_2D, texture);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.FLOAT, null);
+		gl.bindTexture(gl.TEXTURE_2D, null);
+		texture.width = width;
+		texture.height = height;
 	},
 
 	xactivateTargetTexture : function(ctx, texture)

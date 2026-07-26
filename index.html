@@ -984,6 +984,8 @@ var Controls = {
       a.push(persistence.value);
       a.push(0+disableFilter.checked);
       a.push(0+hideGrid.checked);
+      a.push(aspectWidth.value);
+      a.push(aspectHeight.value);
       return a;
     },
 
@@ -994,8 +996,10 @@ var Controls = {
         var hash = locationString.split('#')[1];
         var arrayString = decodeURI(hash);
         var a = arrayString.split(',');
+        var settingsLength = a.length;
         var legacyHueSettings = a.length === 18;
         var hasEmissionRamp = a.length >= 20;
+        var hasAspectRatio = settingsLength >= 22;
         this.setupSlider(mainGain, a.shift());
         this.setupSlider(exposure, a.shift());
         //this.setupSlider(audioVolume, a.shift());
@@ -1025,6 +1029,12 @@ var Controls = {
         this.setupSlider(persistence, a.shift());
         this.setupCheckbox(disableFilter, a.shift());
         this.setupCheckbox(hideGrid, a.shift());
+        if (hasAspectRatio)
+        {
+            aspectWidth.value = parseFloat(a.shift());
+            aspectHeight.value = parseFloat(a.shift());
+            updateAspectRatio();
+        }
         UI.compile();
     },
 
@@ -1165,6 +1175,7 @@ appShell.addEventListener('click', function(event)
 	uniform float uFadeAmount;
 	uniform float uIntensity;
 	uniform float uGain;
+	uniform float uCanvasAspect;
 	attribute vec2 aStart, aEnd;
 	attribute float aIdx;
 	varying vec4 uvl;
@@ -1214,7 +1225,12 @@ appShell.addEventListener('click', function(event)
 
 		uvl.w = uIntensity*mix(1.0-uFadeAmount, 1.0, floor(aIdx / 4.0 + 0.5)/uNEdges);
 
-		vec4 pos = vec4((current+(tang*dir+norm*side)*vSize)*uInvert,0.0,1.0);
+		vec2 projection = vec2(1.0);
+		if (uCanvasAspect > 1.0)
+			projection.x = 1.0/uCanvasAspect;
+		else
+			projection.y = uCanvasAspect;
+		vec4 pos = vec4((current+(tang*dir+norm*side)*vSize)*uInvert*projection,0.0,1.0);
 		gl_Position = pos;
         vTexCoord = 0.5*pos.xy+0.5;
         //float seed = floor(aIdx/4.0);
@@ -1343,18 +1359,17 @@ appShell.addEventListener('click', function(event)
     precision highp float;
     attribute vec2 aPos;
     varying vec2 vTexCoord;
-    varying vec2 vTexCoordCanvas;
-    uniform float uResizeForCanvas;
+    varying vec2 vScreenCoord;
     uniform float uCanvasAspect;
     void main (void)
     {
         gl_Position = vec4(aPos, 0.0, 1.0);
         vTexCoord = (0.5*aPos+0.5);
+        vScreenCoord = vTexCoord;
         if (uCanvasAspect > 1.0)
-            vTexCoord.x = (vTexCoord.x-0.5)*uCanvasAspect+0.5;
+            vScreenCoord.x = (vScreenCoord.x-0.5)*uCanvasAspect+0.5;
         else
-            vTexCoord.y = (vTexCoord.y-0.5)/uCanvasAspect+0.5;
-        vTexCoordCanvas = vTexCoord*uResizeForCanvas;
+            vScreenCoord.y = (vScreenCoord.y-0.5)/uCanvasAspect+0.5;
     }
 </script>
 
@@ -1369,18 +1384,12 @@ appShell.addEventListener('click', function(event)
     uniform vec3 uHaloColour;
     uniform float uEmissionRamp;
     varying vec2 vTexCoord;
-    varying vec2 vTexCoordCanvas;
+    varying vec2 vScreenCoord;
     void main (void)
     {
-        if (vTexCoord.x < 0.0 || vTexCoord.x > 1.0 || vTexCoord.y < 0.0 || vTexCoord.y > 1.0)
-        {
-            gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
-        }
-        else
-        {
-            vec4 line = texture2D(uTexture0, vTexCoordCanvas);
+            vec4 line = texture2D(uTexture0, vTexCoord);
             // r components have grid; g components do not.
-            vec4 screen = texture2D(uTexture3, vTexCoord);
+            vec4 screen = texture2D(uTexture3, vScreenCoord);
             vec4 tightGlow = texture2D(uTexture1, vTexCoord);
             vec4 scatter = texture2D(uTexture2, vTexCoord)+0.35;
             float light = line.r + 1.5*screen.g*screen.g*tightGlow.r;
@@ -1390,7 +1399,6 @@ appShell.addEventListener('click', function(event)
             float coreMix = clamp(0.05+uEmissionRamp*0.5+tlight2*tlight2*0.5, 0.0, 1.0);
             gl_FragColor.rgb = mix(uHaloColour, uCoreColour, coreMix)*tlight;
             gl_FragColor.a= 1.0;
-        }
     }
 </script>
 
