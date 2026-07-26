@@ -574,14 +574,26 @@ var Render =
 			var firstBin = Math.max(1, Math.floor(ranges[band][0]/binHz));
 			var lastBin = Math.min(AudioSystem.frequencyData.length-1, Math.ceil(ranges[band][1]/binHz));
 			var sum = 0;
+			var peaks = [0, 0, 0, 0, 0, 0];
 			for (var bin=firstBin; bin<=lastBin; bin++)
 			{
 				var value = AudioSystem.frequencyData[bin]/255;
 				sum += value*value;
+				for (var peak=0; peak<peaks.length; peak++)
+				{
+					if (value > peaks[peak])
+					{
+						peaks.splice(peak, 0, value);
+						peaks.pop();
+						break;
+					}
+				}
 			}
-			var energy = Math.sqrt(sum/Math.max(1, lastBin-firstBin+1));
-			energy = Math.max(0, Math.min(1, (energy-0.04)/0.55));
-			var smoothing = energy > this.spectralBands[band] ? 0.35 : 0.08;
+			var peakEnergy = peaks.reduce(function(total, value) { return total+value; }, 0)/peaks.length;
+			var rmsEnergy = Math.sqrt(sum/Math.max(1, lastBin-firstBin+1));
+			var energy = Math.max(peakEnergy, rmsEnergy*2.5);
+			energy = Math.max(0, Math.min(1, (energy-0.025)/0.72));
+			var smoothing = energy > this.spectralBands[band] ? 0.48 : 0.12;
 			this.spectralBands[band] += (energy-this.spectralBands[band])*smoothing;
 		}
 		return this.spectralBands;
