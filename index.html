@@ -34,16 +34,50 @@ body {
 }
 
 #controlsPanel {
-  width: 380px;
-  padding: 14px 16px 18px;
+  width: 360px;
+  padding: 9px 12px 12px;
   background: var(--slate-850);
   border-left: 1px solid var(--slate-650);
+  line-height: 1.2;
 }
 
 #title {
   color: var(--hot-orange);
+  font-size: 20px !important;
   font-weight: 750;
   letter-spacing: 0.09em;
+}
+
+#samplerate {
+  font-size: 10px;
+}
+
+#controlsPanel b[style*="font-size:18px"] {
+  font-size: 14px !important;
+}
+
+#controlsPanel p {
+  margin: 5px 0;
+}
+
+#controlsPanel > br {
+  display: block;
+  height: 3px;
+  content: "";
+}
+
+#controlsPanel hr {
+  margin: 8px 0;
+}
+
+#controlsPanel input[type="checkbox"] {
+  width: 12px;
+  height: 12px;
+  margin: 1px 3px 1px 0;
+}
+
+#controlsPanel output {
+  font-size: 11px;
 }
 
 #samplerate,
@@ -59,7 +93,7 @@ output {
 
 #playFileSection td:first-child,
 #displaySection td:first-child {
-  width: 105px;
+  width: 88px;
   white-space: nowrap;
 }
 
@@ -96,8 +130,8 @@ textarea {
 
 input[type="text"],
 input[type="number"] {
-  min-height: 25px;
-  padding: 3px 7px;
+  min-height: 22px;
+  padding: 2px 6px;
   color: #ff6938;
   background:
     linear-gradient(#000, #000) padding-box,
@@ -125,8 +159,8 @@ input[type="checkbox"] {
 }
 
 input[type="range"] {
-  height: 18px;
-  margin: 2px 0;
+  height: 14px;
+  margin: 1px 0;
   appearance: none;
   -webkit-appearance: none;
   accent-color: var(--hot-orange);
@@ -141,9 +175,9 @@ input[type="range"]::-webkit-slider-runnable-track {
 }
 
 input[type="range"]::-webkit-slider-thumb {
-  width: 13px;
-  height: 13px;
-  margin-top: -5px;
+  width: 11px;
+  height: 11px;
+  margin-top: -4px;
   appearance: none;
   background: var(--hot-orange);
   border: 1px solid #ff6a36;
@@ -160,8 +194,8 @@ input[type="range"]::-moz-range-track {
 }
 
 input[type="range"]::-moz-range-thumb {
-  width: 13px;
-  height: 13px;
+  width: 11px;
+  height: 11px;
   background: var(--hot-orange);
   border: 1px solid #ff6a36;
   border-radius: 0;
@@ -174,7 +208,7 @@ input[type="file"] {
 }
 
 input[type="file"]::file-selector-button {
-  padding: 5px 9px;
+  padding: 3px 7px;
   color: var(--slate-950);
   background: var(--toxic-yellow);
   border: 0;
@@ -187,7 +221,7 @@ input[type="file"]::file-selector-button {
 
 audio {
   width: 100%;
-  height: 34px;
+  height: 28px;
   opacity: 0.82;
 }
 
