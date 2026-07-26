@@ -2,6 +2,7 @@
 var AudioSystem =
 {
 	microphoneActive : false,
+	previousAudioVolume : 1.0,
 
     init : function (bufferSize)
     {
@@ -44,8 +45,7 @@ var AudioSystem =
         if (this.microphoneActive)
         {
             AudioSystem.microphone.connect(AudioSystem.scopeNode);
-						audioVolume.value = 0.0;
-				    audioVolume.oninput();
+			this.mutePlaybackForMicrophone();
             return;
         }
 
@@ -56,7 +56,7 @@ var AudioSystem =
                          navigator.mozGetUserMedia;
         if (navigator.getUserMedia)
         {
-			navigator.getUserMedia(constraints, onStream, function(){micCheckbox.checked = false;});
+			navigator.getUserMedia(constraints, onStream, function(){selectMicrophoneSource(false);});
        	}
        	else
        	{
@@ -64,9 +64,23 @@ var AudioSystem =
        	}
     },
 
-    disconnectMicrophone : function()
+	disconnectMicrophone : function()
 	{
 		if (this.microphone) this.microphone.disconnect();
+	},
+
+	mutePlaybackForMicrophone : function()
+	{
+		var currentVolume = parseFloat(audioVolume.value);
+		if (currentVolume > 0) this.previousAudioVolume = currentVolume;
+		audioVolume.value = 0.0;
+		audioVolume.oninput();
+	},
+
+	restorePlaybackVolume : function()
+	{
+		audioVolume.value = this.previousAudioVolume;
+		audioVolume.oninput();
 	}
 }
 
@@ -83,8 +97,7 @@ onStream = function(stream)
 	  AudioSystem.microphone = AudioSystem.audioContext.createMediaStreamSource(stream);
 	  AudioSystem.microphone.connect(AudioSystem.scopeNode);
 
-    audioVolume.value = 0.0;
-    audioVolume.oninput();
+    AudioSystem.mutePlaybackForMicrophone();
 };
 
 var SignalGenerator =
@@ -335,7 +348,9 @@ var Render =
 		this.outputShader.uExposure = gl.getUniformLocation(this.outputShader, "uExposure");
 		this.outputShader.uCoreColour = gl.getUniformLocation(this.outputShader, "uCoreColour");
 		this.outputShader.uHaloColour = gl.getUniformLocation(this.outputShader, "uHaloColour");
+		this.outputShader.uBackgroundColour = gl.getUniformLocation(this.outputShader, "uBackgroundColour");
 		this.outputShader.uEmissionRamp = gl.getUniformLocation(this.outputShader, "uEmissionRamp");
+		this.outputShader.uContrast = gl.getUniformLocation(this.outputShader, "uContrast");
 		this.outputShader.uCanvasAspect = gl.getUniformLocation(this.outputShader, "uCanvasAspect");
 
 		this.texturedShader = this.createShader("texturedVertex","texturedFragment");
@@ -500,7 +515,9 @@ var Render =
 		gl.uniform1f(this.outputShader.uCanvasAspect, this.canvas.width/this.canvas.height);
 		gl.uniform3fv(this.outputShader.uCoreColour, this.getColourFromHex(controls.coreColor));
 		gl.uniform3fv(this.outputShader.uHaloColour, this.getColourFromHex(controls.haloColor));
+		gl.uniform3fv(this.outputShader.uBackgroundColour, this.getColourFromHex(controls.backgroundColor));
 		gl.uniform1f(this.outputShader.uEmissionRamp, controls.emissionRamp);
+		gl.uniform1f(this.outputShader.uContrast, controls.contrast);
 		this.drawTexture(this.lineTexture, this.blur1Texture, this.blur3Texture, this.screenTexture);
 	},
 

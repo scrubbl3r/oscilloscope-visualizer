@@ -36,7 +36,7 @@ body {
 
 #controlsPanel {
   width: 360px;
-  padding: 9px 12px 12px;
+  padding: 9px 12px;
   background: var(--slate-850);
   border-left: 1px solid var(--slate-650);
   line-height: 1.2;
@@ -83,31 +83,40 @@ body {
 
 #emissionTitle {
   display: block;
-  margin-bottom: 4px;
   font-size: 14px;
+}
+
+#emissionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
 }
 
 #emissionControls {
   display: grid;
-  gap: 4px;
+  gap: 2px;
   width: 100%;
 }
 
 #emissionColorRow,
-#emissionOptions {
+#emissionOptions,
+#backgroundControl {
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
-#persistenceControl {
+#persistenceControl,
+#contrastControl {
   display: grid;
   grid-template-columns: 68px minmax(100px, 1fr) 32px;
   gap: 5px;
   align-items: center;
 }
 
-#persistenceControl input {
+#persistenceControl input,
+#contrastControl input {
   width: 100%;
 }
 
@@ -560,6 +569,8 @@ var controls=
 	coreColor : "#b726f6",
 	haloColor : "#ee7b30",
 	emissionRamp : 0.5,
+	backgroundColor : "#000000",
+	contrast : 1.0,
 	aspectWidth : 9,
 	aspectHeight : 6,
 	freezeImage: false,
@@ -747,7 +758,7 @@ t is the time, n is the number of samples.</i>
 
 <p><b style="font-size:18px">
 <input type="checkbox" id="micCheckbox" checked
-onchange="if (this.checked) AudioSystem.tryToGetMicrophone(); else AudioSystem.disconnectMicrophone()"> MICROPHONE</b>
+onchange="selectMicrophoneSource(this.checked)"> MICROPHONE</b>
 <output id="microphoneOutput">
 
 
@@ -797,6 +808,23 @@ var audioDuration = document.getElementById('audioDuration');
 var startMessage = document.getElementById('clicktostart');
 var startupAudioPickerArmed = true;
 
+var selectMicrophoneSource = function(enabled)
+{
+    micCheckbox.checked = enabled;
+    if (!window.AudioSystem || !AudioSystem.audioContext) return;
+    if (enabled)
+    {
+        audioElementControl.pause();
+        AudioSystem.tryToGetMicrophone();
+    }
+    else
+    {
+        AudioSystem.disconnectMicrophone();
+        AudioSystem.restorePlaybackVolume();
+        if (audioElementControl.src) audioElementControl.play().catch(function() {});
+    }
+};
+
 var formatAudioTime = function(seconds)
 {
     if (!Number.isFinite(seconds)) return '00:00';
@@ -823,6 +851,7 @@ var loadAudioFile = function(audioFileToLoad)
     if (window.activateApp) activateApp();
     micCheckbox.checked = false;
     AudioSystem.disconnectMicrophone();
+    AudioSystem.restorePlaybackVolume();
     if (file) URL.revokeObjectURL(file)
     file = URL.createObjectURL(audioFileToLoad);
     audioElementControl.src = file;
@@ -923,9 +952,21 @@ var updateAspectRatio = function()
 
 <hr noshade>
 
+<div id="emissionHeader">
 <b id="emissionTitle">EMISSION</b>
+<label id="backgroundControl" class="colorWellControl">BACKGROUND COLOR
+<input id="backgroundColor" type="color" value="#000000"
+oninput="controls.backgroundColor=this.value">
+</label>
+</div>
 
 <div id="emissionControls">
+<label id="contrastControl">
+<span>CONTRAST</span>
+<input id="contrast" type="range" min="0" max="2.5" value="1" step="0.01"
+oninput="controls.contrast=this.value; contrastOutput.value=parseFloat(this.value).toFixed(2)">
+<output id="contrastOutput">1.00</output>
+</label>
 <div id="emissionColorRow">
 <label class="colorWellControl">CORE COLOR
 <input id="coreColor" type="color" value="#b726f6"
@@ -1007,6 +1048,8 @@ var Controls = {
       a.push(0+hideGrid.checked);
       a.push(aspectWidth.value);
       a.push(aspectHeight.value);
+      a.push(backgroundColor.value.substring(1));
+      a.push(contrast.value);
       return a;
     },
 
@@ -1021,6 +1064,7 @@ var Controls = {
         var legacyHueSettings = a.length === 18;
         var hasEmissionRamp = a.length >= 20;
         var hasAspectRatio = settingsLength >= 22;
+        var hasBackgroundControls = settingsLength >= 24;
         this.setupSlider(mainGain, a.shift());
         this.setupSlider(exposure, a.shift());
         //this.setupSlider(audioVolume, a.shift());
@@ -1055,6 +1099,11 @@ var Controls = {
             aspectWidth.value = parseFloat(a.shift());
             aspectHeight.value = parseFloat(a.shift());
             updateAspectRatio();
+        }
+        if (hasBackgroundControls)
+        {
+            this.setupColor(backgroundColor, a.shift());
+            this.setupSlider(contrast, a.shift());
         }
         UI.compile();
     },
@@ -1403,7 +1452,9 @@ appShell.addEventListener('click', function(event)
     uniform float uExposure;
     uniform vec3 uCoreColour;
     uniform vec3 uHaloColour;
+    uniform vec3 uBackgroundColour;
     uniform float uEmissionRamp;
+    uniform float uContrast;
     varying vec2 vTexCoord;
     varying vec2 vScreenCoord;
     void main (void)
@@ -1418,7 +1469,9 @@ appShell.addEventListener('click', function(event)
             float tlight = 1.0-pow(2.0, -uExposure*light);
             float tlight2 = tlight*tlight*tlight;
             float coreMix = clamp(0.05+uEmissionRamp*0.5+tlight2*tlight2*0.5, 0.0, 1.0);
-            gl_FragColor.rgb = mix(uHaloColour, uCoreColour, coreMix)*tlight;
+            vec3 emissionColour = mix(uHaloColour, uCoreColour, coreMix);
+            vec3 sceneColour = mix(uBackgroundColour, emissionColour, tlight);
+            gl_FragColor.rgb = clamp(uBackgroundColour+(sceneColour-uBackgroundColour)*uContrast, 0.0, 1.0);
             gl_FragColor.a= 1.0;
     }
 </script>
