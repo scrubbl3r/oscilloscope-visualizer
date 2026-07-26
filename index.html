@@ -81,6 +81,78 @@ body {
   font-size: 11px;
 }
 
+#emissionTitle {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+
+#emissionControls {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+}
+
+#emissionColorRow,
+#emissionOptions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+#persistenceControl {
+  display: grid;
+  grid-template-columns: 68px minmax(100px, 1fr) 32px;
+  gap: 5px;
+  align-items: center;
+}
+
+#persistenceControl input {
+  width: 100%;
+}
+
+#emissionOptions {
+  margin-top: 1px;
+  font-size: 9px;
+  letter-spacing: 0.01em;
+}
+
+#emissionOptions label {
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.colorWellControl {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+input[type="color"] {
+  width: 31px;
+  height: 19px;
+  padding: 0;
+  background: #000;
+  border: 0;
+  clip-path: polygon(4px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 4px);
+  cursor: pointer;
+}
+
+input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+input[type="color"]::-webkit-color-swatch {
+  border: 0;
+}
+
+input[type="color"]::-moz-color-swatch {
+  border: 0;
+}
+
 #samplerate,
 output {
   color: var(--toxic-yellow);
@@ -393,6 +465,8 @@ var controls=
 	exposureStops : 0.0,
 	audioVolume : 1.0,
 	hue : 15,
+	coreColor : "#fff0dc",
+	haloColor : "#ff3b0a",
 	aspectWidth : 9,
 	aspectHeight : 6,
 	freezeImage: false,
@@ -716,40 +790,30 @@ var updateAspectRatio = function()
 
 <hr noshade>
 
+<b id="emissionTitle">EMISSION</b>
 
-<table><tr>
-
-<td>
-<table>
-<tr><td align="center">Hue</td></tr>
-<tr><td><input id="hue" type="range" width="200" min="0" max="359" value=15 step=1
-oninput="controls.hue=this.value; hueOutput.value=this.value"></td>
- <td width=35> <output id="hueOutput">15</td>
-</tr>
-<tr><td align="center">Persistence</td></tr>
-<tr><td><input id="persistence" type="range" width="200" min="-1" max="1" value=0 step=0.01
-oninput="controls.persistence=this.value; persistenceOutput.value=parseFloat(this.value).toFixedMinus(1)"></td>
- <td width=35> <output id="persistenceOutput">0.00</td>
-</tr>
-</table>
-</td>
-
-<td>
-<table>
-<tr><td>
-&nbsp <input id="freeze" type="checkbox" onchange="controls.freezeImage=this.checked"> Freeze image
-</td></tr>
-<tr><td>
-&nbsp <input id="disableFilter" type="checkbox" onchange="controls.disableFilter=this.checked"> Disable upsampling
-</td></tr>
-<tr><td>
-&nbsp <input id="hideGrid" type="checkbox"
-onchange="controls.grid=!controls.grid; if (Render) Render.screenTexture = Render.loadTexture('noise.jpg');"> Hide graticule
-</td></tr>
-</table>
-</td>
-
-</tr></table>
+<div id="emissionControls">
+<div id="emissionColorRow">
+<label class="colorWellControl">CORE COLOR
+<input id="coreColor" type="color" value="#fff0dc" oninput="controls.coreColor=this.value">
+</label>
+<label class="colorWellControl">HALO COLOR
+<input id="haloColor" type="color" value="#ff3b0a" oninput="controls.haloColor=this.value">
+</label>
+</div>
+<label id="persistenceControl">
+<span>PERSISTENCE</span>
+<input id="persistence" type="range" min="-1" max="1" value=0 step=0.01
+oninput="controls.persistence=this.value; persistenceOutput.value=parseFloat(this.value).toFixedMinus(1)">
+<output id="persistenceOutput">0.00</output>
+</label>
+<div id="emissionOptions">
+<label><input id="freeze" type="checkbox" onchange="controls.freezeImage=this.checked"> FREEZE</label>
+<label><input id="disableFilter" type="checkbox" onchange="controls.disableFilter=this.checked"> DISABLE UPSAMPLING</label>
+<label><input id="hideGrid" type="checkbox"
+onchange="controls.grid=!controls.grid; if (Render) Render.screenTexture = Render.loadTexture('noise.jpg');"> HIDE GRATICULE</label>
+</div>
+</div>
 
 
 <input id="urlText" type="text" size="28" style="margin-top:5px" onclick="Controls.generateUrl()"
@@ -791,7 +855,8 @@ var Controls = {
       a.push(bExponent.value);
       a.push(bValue.value);
       // don't try to record microphone status
-      a.push(hue.value);
+      a.push(coreColor.value.substring(1));
+      a.push(haloColor.value.substring(1));
       a.push(persistence.value);
       a.push(0+disableFilter.checked);
       a.push(0+hideGrid.checked);
@@ -805,6 +870,7 @@ var Controls = {
         var hash = locationString.split('#')[1];
         var arrayString = decodeURI(hash);
         var a = arrayString.split(',');
+        var legacyHueSettings = a.length === 18;
         this.setupSlider(mainGain, a.shift());
         this.setupSlider(exposure, a.shift());
         //this.setupSlider(audioVolume, a.shift());
@@ -821,7 +887,15 @@ var Controls = {
         this.setupSlider(aValue, a.shift());
         this.setupSlider(bExponent, a.shift());
         this.setupSlider(bValue, a.shift());   
-        this.setupSlider(hue, a.shift());
+        if (legacyHueSettings)
+        {
+            a.shift();
+        }
+        else
+        {
+            this.setupColor(coreColor, a.shift());
+            this.setupColor(haloColor, a.shift());
+        }
         this.setupSlider(persistence, a.shift());
         this.setupCheckbox(disableFilter, a.shift());
         this.setupCheckbox(hideGrid, a.shift());
@@ -845,6 +919,12 @@ var Controls = {
     {
         slider.value = parseFloat(s);
         slider.oninput();
+    },
+
+    setupColor : function(input, s)
+    {
+        input.value = '#'+s;
+        input.oninput();
     },
 
     setupCheckbox : function(checkbox, s)
@@ -1165,7 +1245,8 @@ document.addEventListener('mouseup', cancelHoldToToggle);
     uniform sampler2D uTexture2; //big glow
     uniform sampler2D uTexture3; //screen
     uniform float uExposure;
-    uniform vec3 uColour;
+    uniform vec3 uCoreColour;
+    uniform vec3 uHaloColour;
     varying vec2 vTexCoord;
     varying vec2 vTexCoordCanvas;
     void main (void)
@@ -1185,7 +1266,7 @@ document.addEventListener('mouseup', cancelHoldToToggle);
             light += 0.4*scatter.g * (2.0+1.0*screen.g + 0.5*screen.r);
             float tlight = 1.0-pow(2.0, -uExposure*light);
             float tlight2 = tlight*tlight*tlight;
-            gl_FragColor.rgb = mix(uColour, vec3(1.0), 0.3+tlight2*tlight2*0.5)*tlight;
+            gl_FragColor.rgb = mix(uHaloColour, uCoreColour, 0.3+tlight2*tlight2*0.5)*tlight;
             gl_FragColor.a= 1.0;
         }
     }

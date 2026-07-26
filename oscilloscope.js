@@ -327,7 +327,8 @@ var Render =
 		this.outputShader.uTexture2 = gl.getUniformLocation(this.outputShader, "uTexture2");
 		this.outputShader.uTexture3 = gl.getUniformLocation(this.outputShader, "uTexture3");
 		this.outputShader.uExposure = gl.getUniformLocation(this.outputShader, "uExposure");
-		this.outputShader.uColour = gl.getUniformLocation(this.outputShader, "uColour");
+		this.outputShader.uCoreColour = gl.getUniformLocation(this.outputShader, "uCoreColour");
+		this.outputShader.uHaloColour = gl.getUniformLocation(this.outputShader, "uHaloColour");
 		this.outputShader.uResizeForCanvas = gl.getUniformLocation(this.outputShader, "uResizeForCanvas");
 		this.outputShader.uCanvasAspect = gl.getUniformLocation(this.outputShader, "uCanvasAspect");
 
@@ -481,21 +482,19 @@ var Render =
 		gl.uniform1f(this.outputShader.uExposure, brightness);
 		gl.uniform1f(this.outputShader.uResizeForCanvas, this.lineTexture.width/1024);
 		gl.uniform1f(this.outputShader.uCanvasAspect, this.canvas.width/this.canvas.height);
-		var colour = this.getColourFromHue(controls.hue);
-		gl.uniform3fv(this.outputShader.uColour, colour);
+		gl.uniform3fv(this.outputShader.uCoreColour, this.getColourFromHex(controls.coreColor));
+		gl.uniform3fv(this.outputShader.uHaloColour, this.getColourFromHex(controls.haloColor));
 		this.drawTexture(this.lineTexture, this.blur1Texture, this.blur3Texture, this.screenTexture);
 	},
 
-	getColourFromHue : function(hue)
+	getColourFromHex : function(hexColour)
 	{
-		var alpha = (hue/120.0) % 1.0;
-		var start = Math.sqrt(1.0-alpha);
-		var end = Math.sqrt(alpha);
-		var colour;
-		if (hue<120) colour = [start, end, 0.0];
-		else if (hue<240) colour = [0.0, start, end];
-		else colour = [end, 0.0, start];
-		return colour;
+		var hex = hexColour.replace('#', '');
+		return [
+			parseInt(hex.substring(0,2), 16)/255,
+			parseInt(hex.substring(2,4), 16)/255,
+			parseInt(hex.substring(4,6), 16)/255
+		];
 	},
 
 	activateTargetTexture : function(texture)
