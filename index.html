@@ -815,6 +815,8 @@ var loadAudioFile = function(audioFileToLoad)
     if (file) URL.revokeObjectURL(file)
     file = URL.createObjectURL(audioFileToLoad);
     audioElementControl.src = file;
+    audioElementControl.loop = true;
+    audioLoop.setAttribute('aria-pressed', 'true');
     audioElementControl.play().catch(function() {});
     if (startMessage) startMessage.remove();
 };
