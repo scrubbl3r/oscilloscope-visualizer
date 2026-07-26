@@ -282,6 +282,17 @@ canvas {
   outline: 1px solid #343434;
 }
 
+#clicktostart {
+  position: absolute;
+  z-index: 1;
+  left: 100px;
+  top: 50px;
+  color: var(--hot-orange);
+  font-size: 18px;
+  text-shadow: 0 0 14px rgba(255, 59, 10, 0.7);
+  pointer-events: none;
+}
+
 hr {
   height: 1px;
   margin: 13px 0;
@@ -575,6 +586,7 @@ var toggleVisible = function(string)
 
 <td id="viewportCell" valign="top">
 <canvas id="crtCanvas" width="800" height="800"></canvas>
+<b id="clicktostart">[CLICK TO START]</b>
 </td>
 <td id="controlsPanel" width="360" valign="top">
 

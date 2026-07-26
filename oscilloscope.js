@@ -954,6 +954,8 @@ var activateApp = function()
 	document.removeEventListener("pointerdown", activateApp, true);
 	document.removeEventListener("keydown", activateApp, true);
 	document.removeEventListener("click", activateApp, true);
+	var startMessage = document.getElementById("clicktostart");
+	if (startMessage) startMessage.remove();
 	//Filter.init(512, 10, 4);
 	Filter.init(1024, 8, 6);
 	AudioSystem.init(1024);
