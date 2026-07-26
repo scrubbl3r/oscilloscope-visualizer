@@ -287,10 +287,16 @@ canvas {
   z-index: 1;
   left: 100px;
   top: 50px;
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: var(--hot-orange);
+  font-family: inherit;
   font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.055em;
   text-shadow: 0 0 14px rgba(255, 59, 10, 0.7);
-  pointer-events: none;
+  cursor: pointer;
 }
 
 hr {
@@ -586,7 +592,7 @@ var toggleVisible = function(string)
 
 <td id="viewportCell" valign="top">
 <canvas id="crtCanvas" width="800" height="800"></canvas>
-<b id="clicktostart">[CLICK TO START]</b>
+<button id="clicktostart" type="button">[CLICK TO LOAD AUDIO]</button>
 </td>
 <td id="controlsPanel" width="360" valign="top">
 
@@ -780,6 +786,7 @@ var audioLoop = document.getElementById('audioLoop');
 var audioSeek = document.getElementById('audioSeek');
 var audioCurrentTime = document.getElementById('audioCurrentTime');
 var audioDuration = document.getElementById('audioDuration');
+var startMessage = document.getElementById('clicktostart');
 
 var formatAudioTime = function(seconds)
 {
@@ -804,11 +811,18 @@ var syncAudioTransport = function()
 var loadAudioFile = function(audioFileToLoad)
 {
     if (!audioFileToLoad) return;
+    if (window.activateApp) activateApp();
     if (file) URL.revokeObjectURL(file)
     file = URL.createObjectURL(audioFileToLoad);
     audioElementControl.src = file;
     audioElementControl.play().catch(function() {});
+    if (startMessage) startMessage.remove();
 };
+
+startMessage.addEventListener('click', function()
+{
+    audioFileInput.click();
+});
 
 audioFileInput.onchange = function()
 {
