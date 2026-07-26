@@ -402,8 +402,9 @@ var Render =
 		var canvasHeight;
 		if (document.body.classList.contains('full-screen-mode'))
 		{
-			canvasWidth = windowWidth;
-			canvasHeight = windowHeight;
+			var fullScreenAspect = controls.aspectWidth/controls.aspectHeight;
+			canvasWidth = Math.min(windowWidth, windowHeight*fullScreenAspect);
+			canvasHeight = canvasWidth/fullScreenAspect;
 		}
 		else
 		{
