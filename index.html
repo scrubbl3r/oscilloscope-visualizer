@@ -600,7 +600,7 @@ var toggleVisible = function(string)
 
 <td id="viewportCell" valign="top">
 <canvas id="crtCanvas" width="800" height="800"></canvas>
-<button id="clicktostart" type="button">[CLICK TO LOAD AUDIO]</button>
+<button id="clicktostart" type="button">[CLICK TO START LIVE INPUT]</button>
 </td>
 <td id="controlsPanel" width="360" valign="top">
 
@@ -746,7 +746,7 @@ t is the time, n is the number of samples.</i>
 <hr noshade>
 
 <p><b style="font-size:18px">
-<input type="checkbox" id="micCheckbox"
+<input type="checkbox" id="micCheckbox" checked
 onchange="if (this.checked) AudioSystem.tryToGetMicrophone(); else AudioSystem.disconnectMicrophone()"> MICROPHONE</b>
 <output id="microphoneOutput">
 
@@ -821,6 +821,8 @@ var loadAudioFile = function(audioFileToLoad)
 {
     if (!audioFileToLoad) return;
     if (window.activateApp) activateApp();
+    micCheckbox.checked = false;
+    AudioSystem.disconnectMicrophone();
     if (file) URL.revokeObjectURL(file)
     file = URL.createObjectURL(audioFileToLoad);
     audioElementControl.src = file;
@@ -835,6 +837,17 @@ var loadAudioFile = function(audioFileToLoad)
 var openStartupAudioPicker = function(event)
 {
     if (!startupAudioPickerArmed || event.detail === 0 || event.target === audioFileInput) return;
+    if (micCheckbox.checked)
+    {
+        if (event.target === micCheckbox) return;
+        event.preventDefault();
+        event.stopPropagation();
+        AudioSystem.tryToGetMicrophone();
+        startupAudioPickerArmed = false;
+        document.removeEventListener('click', openStartupAudioPicker, true);
+        if (startMessage) startMessage.remove();
+        return;
+    }
     event.preventDefault();
     event.stopPropagation();
     audioFileInput.click();

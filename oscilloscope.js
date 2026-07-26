@@ -74,6 +74,11 @@ var AudioSystem =
 
 onStream = function(stream)
 {
+    if (!micCheckbox.checked)
+    {
+		stream.getTracks().forEach(function(track){ track.stop(); });
+		return;
+    }
     AudioSystem.microphoneActive = true;
 	  AudioSystem.microphone = AudioSystem.audioContext.createMediaStreamSource(stream);
 	  AudioSystem.microphone.connect(AudioSystem.scopeNode);
@@ -959,7 +964,7 @@ Render.init();
 
 var appActivated = false;
 
-var activateApp = function()
+var activateApp = function(event)
 {
 	if (appActivated) return;
 	appActivated = true;
@@ -972,6 +977,12 @@ var activateApp = function()
 	Render.setupArrays(Filter.nSmoothedSamples);
 	AudioSystem.startSound();
 	AudioSystem.audioContext.resume().catch(function() {});
+	if (event && event.type === "keydown" && micCheckbox.checked)
+	{
+		AudioSystem.tryToGetMicrophone();
+		var startMessage = document.getElementById("clicktostart");
+		if (startMessage) startMessage.remove();
+	}
 	requestAnimationFrame(drawCRTFrame);
 	Controls.setupControls();
 };
