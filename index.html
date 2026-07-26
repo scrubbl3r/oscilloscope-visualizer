@@ -63,12 +63,12 @@ body {
 
 #controlsPanel > br {
   display: block;
-  height: 3px;
+  height: 2px;
   content: "";
 }
 
 #controlsPanel hr {
-  margin: 8px 0;
+  margin: 6px 0;
 }
 
 #controlsPanel input[type="checkbox"] {
@@ -95,7 +95,7 @@ body {
 
 #emissionControls {
   display: grid;
-  gap: 2px;
+  gap: 1px;
   width: 100%;
 }
 
@@ -108,15 +108,17 @@ body {
 }
 
 #persistenceControl,
-#contrastControl {
+#contrastControl,
+#blackPointControl {
   display: grid;
-  grid-template-columns: 68px minmax(100px, 1fr) 32px;
+  grid-template-columns: 78px minmax(90px, 1fr) 32px;
   gap: 5px;
   align-items: center;
 }
 
 #persistenceControl input,
-#contrastControl input {
+#contrastControl input,
+#blackPointControl input {
   width: 100%;
 }
 
@@ -571,6 +573,7 @@ var controls=
 	emissionRamp : 0.5,
 	backgroundColor : "#000000",
 	contrast : 1.0,
+	blackPoint : 0.04,
 	aspectWidth : 9,
 	aspectHeight : 6,
 	freezeImage: false,
@@ -965,6 +968,12 @@ oninput="controls.backgroundColor=this.value">
 oninput="controls.contrast=this.value; contrastOutput.value=parseFloat(this.value).toFixed(2)">
 <output id="contrastOutput">1.00</output>
 </label>
+<label id="blackPointControl">
+<span>BLACK POINT</span>
+<input id="blackPoint" type="range" min="0" max="0.5" value="0.04" step="0.005"
+oninput="controls.blackPoint=this.value; blackPointOutput.value=parseFloat(this.value).toFixed(3)">
+<output id="blackPointOutput">0.040</output>
+</label>
 <div id="emissionColorRow">
 <label class="colorWellControl">CORE COLOR
 <input id="coreColor" type="color" value="#b726f6"
@@ -1048,6 +1057,7 @@ var Controls = {
       a.push(aspectHeight.value);
       a.push(backgroundColor.value.substring(1));
       a.push(contrast.value);
+      a.push(blackPoint.value);
       return a;
     },
 
@@ -1063,6 +1073,7 @@ var Controls = {
         var hasEmissionRamp = a.length >= 20;
         var hasAspectRatio = settingsLength >= 22;
         var hasBackgroundControls = settingsLength >= 24;
+        var hasBlackPoint = settingsLength >= 25;
         this.setupSlider(mainGain, a.shift());
         this.setupSlider(exposure, a.shift());
         //this.setupSlider(audioVolume, a.shift());
@@ -1103,6 +1114,7 @@ var Controls = {
             this.setupColor(backgroundColor, a.shift());
             this.setupSlider(contrast, a.shift());
         }
+        if (hasBlackPoint) this.setupSlider(blackPoint, a.shift());
         UI.compile();
     },
 
@@ -1453,6 +1465,7 @@ appShell.addEventListener('click', function(event)
     uniform vec3 uBackgroundColour;
     uniform float uEmissionRamp;
     uniform float uContrast;
+    uniform float uBlackPoint;
     varying vec2 vTexCoord;
     varying vec2 vScreenCoord;
     void main (void)
@@ -1465,6 +1478,7 @@ appShell.addEventListener('click', function(event)
             float light = line.r + 1.5*screen.g*screen.g*tightGlow.r;
             light += 0.4*scatter.g * (2.0+1.0*screen.g + 0.5*screen.r);
             float tlight = 1.0-pow(2.0, -uExposure*light);
+            tlight = max(0.0, tlight-uBlackPoint)/max(0.001, 1.0-uBlackPoint);
             float tlight2 = tlight*tlight*tlight;
             float coreMix = clamp(0.05+uEmissionRamp*0.5+tlight2*tlight2*0.5, 0.0, 1.0);
             vec3 emissionColour = mix(uHaloColour, uCoreColour, coreMix);
