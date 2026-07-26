@@ -3,17 +3,17 @@
 <style>
 :root {
   color-scheme: dark;
-  --slate-950: #0c0c0c;
-  --slate-900: #121212;
-  --slate-850: #181818;
-  --slate-800: #202020;
-  --slate-750: #292929;
-  --slate-650: #414141;
-  --text: #d76835;
-  --text-dim: #8f5033;
-  --hot-orange: #f05a28;
-  --hot-red: #cf351d;
-  --toxic-yellow: #e7f23b;
+  --slate-950: #111111;
+  --slate-900: #191919;
+  --slate-850: #222222;
+  --slate-800: #2b2b2b;
+  --slate-750: #343434;
+  --slate-650: #494949;
+  --text: #ef4a1b;
+  --text-dim: #9b3f25;
+  --hot-orange: #ff3b0a;
+  --hot-red: #d91e0b;
+  --toxic-yellow: #efff1f;
 }
 
 * {
@@ -72,12 +72,12 @@ canvas {
   display: block;
   margin-right: 12px;
   background: black;
-  outline: 1px solid #292929;
+  outline: 1px solid #343434;
 }
 
 #clicktostart {
   color: var(--hot-orange) !important;
-  text-shadow: 0 0 14px rgba(255, 79, 31, 0.65);
+  text-shadow: 0 0 14px rgba(255, 59, 10, 0.7);
 }
 
 hr {
@@ -98,7 +98,7 @@ input[type="text"],
 input[type="number"] {
   min-height: 25px;
   padding: 3px 7px;
-  color: #e17a4b;
+  color: #ff6938;
   background: var(--slate-800);
   border: 1px solid var(--slate-650);
   border-radius: 0;
@@ -116,7 +116,7 @@ input[type="number"] {
 input[type="text"]:focus,
 input[type="number"]:focus {
   border-color: var(--toxic-yellow);
-  box-shadow: 0 0 0 1px rgba(231, 242, 59, 0.18);
+  box-shadow: 0 0 0 1px rgba(239, 255, 31, 0.18);
 }
 
 input[type="checkbox"] {
@@ -135,7 +135,7 @@ input[type="range"] {
 input[type="range"]::-webkit-slider-runnable-track {
   height: 4px;
   background: var(--slate-750);
-  border: 1px solid #454545;
+  border: 1px solid #505050;
   border-radius: 0;
 }
 
@@ -145,16 +145,16 @@ input[type="range"]::-webkit-slider-thumb {
   margin-top: -5px;
   appearance: none;
   background: var(--hot-orange);
-  border: 1px solid #ff7848;
+  border: 1px solid #ff6a36;
   border-radius: 0;
   clip-path: polygon(3px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 3px);
-  box-shadow: 0 0 8px rgba(255, 79, 31, 0.34);
+  box-shadow: 0 0 8px rgba(255, 59, 10, 0.42);
 }
 
 input[type="range"]::-moz-range-track {
   height: 4px;
   background: var(--slate-750);
-  border: 1px solid #454545;
+  border: 1px solid #505050;
   border-radius: 0;
 }
 
@@ -162,10 +162,10 @@ input[type="range"]::-moz-range-thumb {
   width: 13px;
   height: 13px;
   background: var(--hot-orange);
-  border: 1px solid #ff7848;
+  border: 1px solid #ff6a36;
   border-radius: 0;
   clip-path: polygon(3px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 3px);
-  box-shadow: 0 0 8px rgba(255, 79, 31, 0.34);
+  box-shadow: 0 0 8px rgba(255, 59, 10, 0.42);
 }
 
 input[type="file"] {
@@ -192,12 +192,12 @@ audio {
 
 a {
   color: var(--toxic-yellow);
-  text-decoration-color: rgba(231, 242, 59, 0.42);
+  text-decoration-color: rgba(239, 255, 31, 0.42);
   text-underline-offset: 2px;
 }
 
 a:hover {
-  color: #f6ff69;
+  color: #f7ff63;
 }
 
 table {
