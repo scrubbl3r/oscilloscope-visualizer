@@ -25,7 +25,7 @@ var controls=
 	mainGain : 0.0,
 	exposureStops : 0.0,
 	audioVolume : 1.0,
-	hue : 125,
+	hue : 15,
 	freezeImage: false,
 	disableFilter: false,
 	aValue : 1.0,
@@ -259,9 +259,9 @@ audioFile.onchange = function()
 <td>
 <table>
 <tr><td align="center">Hue</td></tr>
-<tr><td><input id="hue" type="range" width="200" min="0" max="359" value=125 step=1
+<tr><td><input id="hue" type="range" width="200" min="0" max="359" value=15 step=1
 oninput="controls.hue=this.value; hueOutput.value=this.value"></td>
- <td width=35> <output id="hueOutput">125</td>
+ <td width=35> <output id="hueOutput">15</td>
 </tr>
 <tr><td align="center">Persistence</td></tr>
 <tr><td><input id="persistence" type="range" width="200" min="-1" max="1" value=0 step=0.01
