@@ -198,6 +198,28 @@ output {
   background: #ff6a36;
 }
 
+#audioLoop {
+  width: 25px;
+  height: 20px;
+  margin-left: auto;
+  padding: 0 0 1px;
+  border: 0;
+  color: var(--hot-orange);
+  background: #000;
+  clip-path: polygon(4px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 4px);
+  font: 700 16px/20px sans-serif;
+  cursor: pointer;
+}
+
+#audioLoop:hover {
+  color: var(--toxic-yellow);
+}
+
+#audioLoop[aria-pressed="true"] {
+  color: #000;
+  background: var(--hot-orange);
+}
+
 b {
   font-weight: 700;
   letter-spacing: 0.055em;
@@ -676,6 +698,7 @@ or <a href="https://github.com/mattingalls/Soundflower">Soundflower</a> with
 <div id="playFileSection">
 <label id="audioFileButton" for="audioFile">CHOOSE FILE</label>
 <input id="audioFile" type="file" accept="audio/*" />
+<button id="audioLoop" type="button" aria-label="Loop audio" aria-pressed="false" title="Loop audio">⟳</button>
 </div>
 
 <audio id="audioElement" preload="metadata"></audio>
@@ -694,6 +717,7 @@ var audioElementControl = document.getElementById('audioElement');
 var audioTransport = document.getElementById('audioTransport');
 var audioPlayPause = document.getElementById('audioPlayPause');
 var audioStop = document.getElementById('audioStop');
+var audioLoop = document.getElementById('audioLoop');
 var audioSeek = document.getElementById('audioSeek');
 var audioCurrentTime = document.getElementById('audioCurrentTime');
 var audioDuration = document.getElementById('audioDuration');
@@ -744,6 +768,12 @@ audioStop.addEventListener('click', function()
     audioElementControl.pause();
     audioElementControl.currentTime = 0;
     syncAudioTransport();
+});
+
+audioLoop.addEventListener('click', function()
+{
+    audioElementControl.loop = !audioElementControl.loop;
+    this.setAttribute('aria-pressed', audioElementControl.loop);
 });
 
 audioSeek.addEventListener('input', function()
