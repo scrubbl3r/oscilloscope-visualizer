@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <head>
+<meta charset="UTF-8">
 <style>
 :root {
   color-scheme: dark;
@@ -229,10 +230,99 @@ input[type="range"]::-moz-range-thumb {
   box-shadow: 0 0 8px rgba(255, 59, 10, 0.42);
 }
 
-audio {
+#audioElement {
+  display: none;
+}
+
+#audioTransport {
+  --seek-progress: 0%;
+  display: grid;
+  grid-template-columns: 27px 34px minmax(80px, 1fr) 34px 27px;
+  gap: 5px;
+  align-items: center;
+  min-height: 29px;
+  padding: 4px 5px;
+  background: #090909;
+  clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 5px);
+}
+
+.transportButton {
+  width: 27px;
+  height: 21px;
+  padding: 0;
+  color: #000;
+  background: var(--hot-orange);
+  border: 0;
+  clip-path: polygon(4px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 4px);
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 21px;
+  cursor: pointer;
+}
+
+.transportButton:hover {
+  background: #ff6a36;
+}
+
+#audioStop {
+  color: var(--hot-orange);
+  background: var(--slate-750);
+}
+
+#audioStop:hover {
+  color: #000;
+  background: var(--hot-red);
+}
+
+.transportTime {
+  min-width: 34px;
+  color: var(--toxic-yellow);
+  font-size: 9px !important;
+  letter-spacing: 0.02em;
+  text-align: center;
+}
+
+#audioSeek {
   width: 100%;
-  height: 28px;
-  opacity: 0.82;
+  height: 12px;
+  margin: 0;
+}
+
+#audioSeek::-webkit-slider-runnable-track {
+  height: 3px;
+  background:
+    linear-gradient(
+      to right,
+      var(--hot-red) 0,
+      var(--hot-orange) var(--seek-progress),
+      var(--slate-750) var(--seek-progress),
+      var(--slate-750) 100%
+    );
+  border: 0;
+}
+
+#audioSeek::-webkit-slider-thumb {
+  width: 7px;
+  height: 11px;
+  margin-top: -4px;
+  box-shadow: none;
+}
+
+#audioSeek::-moz-range-track {
+  height: 3px;
+  background: var(--slate-750);
+  border: 0;
+}
+
+#audioSeek::-moz-range-progress {
+  height: 3px;
+  background: var(--hot-orange);
+}
+
+#audioSeek::-moz-range-thumb {
+  width: 7px;
+  height: 11px;
+  box-shadow: none;
 }
 
 a {
@@ -514,12 +604,45 @@ or <a href="https://github.com/mattingalls/Soundflower">Soundflower</a> with
 <input id="audioFile" type="file" accept="audio/*" />
 </div>
 
-<p><audio id="audioElement" controls></audio>
+<audio id="audioElement" preload="metadata"></audio>
+<div id="audioTransport" role="group" aria-label="Audio transport">
+<button id="audioPlayPause" class="transportButton" type="button" aria-label="Play">▶</button>
+<output id="audioCurrentTime" class="transportTime">00:00</output>
+<input id="audioSeek" type="range" min="0" max="1000" value="0" step="1" aria-label="Audio position">
+<output id="audioDuration" class="transportTime">00:00</output>
+<button id="audioStop" class="transportButton" type="button" aria-label="Stop">■</button>
+</div>
 
 <script>
 var file;
 var audioFileInput = document.getElementById('audioFile');
 var audioElementControl = document.getElementById('audioElement');
+var audioTransport = document.getElementById('audioTransport');
+var audioPlayPause = document.getElementById('audioPlayPause');
+var audioStop = document.getElementById('audioStop');
+var audioSeek = document.getElementById('audioSeek');
+var audioCurrentTime = document.getElementById('audioCurrentTime');
+var audioDuration = document.getElementById('audioDuration');
+
+var formatAudioTime = function(seconds)
+{
+    if (!Number.isFinite(seconds)) return '00:00';
+    var minutes = Math.floor(seconds/60);
+    var remainder = Math.floor(seconds%60);
+    return String(minutes).padStart(2, '0')+':'+String(remainder).padStart(2, '0');
+};
+
+var syncAudioTransport = function()
+{
+    var duration = audioElementControl.duration;
+    var progress = Number.isFinite(duration) && duration > 0 ? audioElementControl.currentTime/duration : 0;
+    audioCurrentTime.value = formatAudioTime(audioElementControl.currentTime);
+    audioDuration.value = formatAudioTime(duration);
+    audioSeek.value = Math.round(progress*1000);
+    audioTransport.style.setProperty('--seek-progress', (progress*100)+'%');
+    audioPlayPause.textContent = audioElementControl.paused ? '▶' : 'Ⅱ';
+    audioPlayPause.setAttribute('aria-label', audioElementControl.paused ? 'Play' : 'Pause');
+};
 
 var loadAudioFile = function(audioFileToLoad)
 {
@@ -534,6 +657,34 @@ audioFileInput.onchange = function()
 {
     loadAudioFile(this.files[0]);
 };
+
+audioPlayPause.addEventListener('click', function()
+{
+    if (!audioElementControl.src) return;
+    if (audioElementControl.paused) audioElementControl.play().catch(function() {});
+    else audioElementControl.pause();
+});
+
+audioStop.addEventListener('click', function()
+{
+    audioElementControl.pause();
+    audioElementControl.currentTime = 0;
+    syncAudioTransport();
+});
+
+audioSeek.addEventListener('input', function()
+{
+    if (!Number.isFinite(audioElementControl.duration)) return;
+    audioElementControl.currentTime = audioElementControl.duration*(this.value/1000);
+});
+
+audioElementControl.addEventListener('loadedmetadata', syncAudioTransport);
+audioElementControl.addEventListener('durationchange', syncAudioTransport);
+audioElementControl.addEventListener('timeupdate', syncAudioTransport);
+audioElementControl.addEventListener('play', syncAudioTransport);
+audioElementControl.addEventListener('pause', syncAudioTransport);
+audioElementControl.addEventListener('ended', syncAudioTransport);
+syncAudioTransport();
 </script>
 
 <hr noshade>
