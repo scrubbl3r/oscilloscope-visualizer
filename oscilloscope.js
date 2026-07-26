@@ -396,12 +396,16 @@ var Render =
 	{
 		var windowWidth = Math.max(document.documentElement.clientWidth, window.innerWidth || 0)
 		var windowHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0)
-		var canvasSize = Math.min(windowHeight-21, windowWidth-UI.sidebarWidth-70);
-		Render.canvas.width = canvasSize;
-		Render.canvas.height = canvasSize;
+		var availableWidth = Math.max(1, windowWidth-UI.sidebarWidth-70);
+		var availableHeight = Math.max(1, windowHeight-21);
+		var aspectRatio = controls.aspectWidth/controls.aspectHeight;
+		var canvasWidth = Math.min(availableWidth, availableHeight*aspectRatio);
+		var canvasHeight = canvasWidth/aspectRatio;
+		Render.canvas.width = Math.floor(canvasWidth);
+		Render.canvas.height = Math.floor(canvasHeight);
 		if (Render.lineTexture)
 		{
-			var renderSize = Math.min(canvasSize, 1024);
+			var renderSize = Math.min(canvasWidth, canvasHeight, 1024);
 			Render.lineTexture.width = renderSize;
 			Render.lineTexture.height = renderSize;
 			//testOutputElement.value = windowHeight;
