@@ -68,7 +68,7 @@ body {
 }
 
 #controlsPanel hr {
-  margin: 6px 0;
+  margin: 5px 0;
 }
 
 #controlsPanel input[type="checkbox"] {
@@ -87,9 +87,6 @@ body {
 }
 
 #emissionHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
   margin-bottom: 2px;
 }
 
@@ -122,6 +119,17 @@ body {
   width: 100%;
 }
 
+#spectralColorControl {
+  display: grid;
+  grid-template-columns: 78px 12px minmax(78px, 1fr) 32px;
+  gap: 5px;
+  align-items: center;
+}
+
+#spectralColorControl input[type="range"] {
+  width: 100%;
+}
+
 #emissionOptions {
   margin-top: 1px;
   font-size: 9px;
@@ -141,6 +149,24 @@ body {
   margin: 0 7px;
   --ramp-core: #b726f6;
   --ramp-halo: #ee7b30;
+}
+
+@media (max-height: 760px) {
+  #controlsPanel {
+    padding: 5px 10px;
+  }
+
+  #controlsPanel p {
+    margin: 2px 0;
+  }
+
+  #controlsPanel > br {
+    height: 0;
+  }
+
+  #controlsPanel hr {
+    margin: 2px 0;
+  }
 }
 
 #emissionRamp::-webkit-slider-runnable-track {
@@ -574,6 +600,8 @@ var controls=
 	backgroundColor : "#000000",
 	contrast : 1.0,
 	blackPoint : 0.04,
+	spectralColor : false,
+	spectralAmount : 0.65,
 	aspectWidth : 9,
 	aspectHeight : 6,
 	freezeImage: false,
@@ -955,24 +983,12 @@ var updateAspectRatio = function()
 
 <div id="emissionHeader">
 <b id="emissionTitle">EMISSION</b>
-<label id="backgroundControl" class="colorWellControl">BACKGROUND COLOR
-<input id="backgroundColor" type="color" value="#000000"
-oninput="controls.backgroundColor=this.value">
-</label>
 </div>
 
 <div id="emissionControls">
-<label id="contrastControl">
-<span>CONTRAST</span>
-<input id="contrast" type="range" min="0" max="2.5" value="1" step="0.01"
-oninput="controls.contrast=this.value; contrastOutput.value=parseFloat(this.value).toFixed(2)">
-<output id="contrastOutput">1.00</output>
-</label>
-<label id="blackPointControl">
-<span>BLACK POINT</span>
-<input id="blackPoint" type="range" min="0" max="0.5" value="0.04" step="0.005"
-oninput="controls.blackPoint=this.value; blackPointOutput.value=parseFloat(this.value).toFixed(3)">
-<output id="blackPointOutput">0.040</output>
+<label id="backgroundControl" class="colorWellControl">BACKGROUND COLOR
+<input id="backgroundColor" type="color" value="#000000"
+oninput="controls.backgroundColor=this.value">
 </label>
 <div id="emissionColorRow">
 <label class="colorWellControl">CORE COLOR
@@ -986,11 +1002,32 @@ aria-label="Core to halo balance" oninput="controls.emissionRamp=this.value">
 oninput="controls.haloColor=this.value; updateEmissionRamp()">
 </label>
 </div>
+<label id="contrastControl">
+<span>CONTRAST</span>
+<input id="contrast" type="range" min="0" max="2.5" value="1" step="0.01"
+oninput="controls.contrast=this.value; contrastOutput.value=parseFloat(this.value).toFixed(2)">
+<output id="contrastOutput">1.00</output>
+</label>
+<label id="blackPointControl">
+<span>BLACK POINT</span>
+<input id="blackPoint" type="range" min="0" max="0.5" value="0.04" step="0.005"
+oninput="controls.blackPoint=this.value; blackPointOutput.value=parseFloat(this.value).toFixed(3)">
+<output id="blackPointOutput">0.040</output>
+</label>
 <label id="persistenceControl">
 <span>PERSISTENCE</span>
 <input id="persistence" type="range" min="-1" max="1" value=0.9 step=0.01
 oninput="controls.persistence=this.value; persistenceOutput.value=parseFloat(this.value).toFixedMinus(1)">
 <output id="persistenceOutput">+0.9</output>
+</label>
+<label id="spectralColorControl">
+<span>SPECTRAL COLOR</span>
+<input id="spectralColor" type="checkbox"
+onchange="controls.spectralColor=this.checked">
+<input id="spectralAmount" type="range" min="0" max="1" value="0.65" step="0.01"
+aria-label="Spectral color amount"
+oninput="controls.spectralAmount=this.value; spectralAmountOutput.value=parseFloat(this.value).toFixed(2)">
+<output id="spectralAmountOutput">0.65</output>
 </label>
 <div id="emissionOptions">
 <label><input id="freeze" type="checkbox" onchange="controls.freezeImage=this.checked"> FREEZE</label>
@@ -1058,6 +1095,8 @@ var Controls = {
       a.push(backgroundColor.value.substring(1));
       a.push(contrast.value);
       a.push(blackPoint.value);
+      a.push(0+spectralColor.checked);
+      a.push(spectralAmount.value);
       return a;
     },
 
@@ -1074,6 +1113,7 @@ var Controls = {
         var hasAspectRatio = settingsLength >= 22;
         var hasBackgroundControls = settingsLength >= 24;
         var hasBlackPoint = settingsLength >= 25;
+        var hasSpectralColor = settingsLength >= 27;
         this.setupSlider(mainGain, a.shift());
         this.setupSlider(exposure, a.shift());
         //this.setupSlider(audioVolume, a.shift());
@@ -1115,6 +1155,11 @@ var Controls = {
             this.setupSlider(contrast, a.shift());
         }
         if (hasBlackPoint) this.setupSlider(blackPoint, a.shift());
+        if (hasSpectralColor)
+        {
+            this.setupCheckbox(spectralColor, a.shift());
+            this.setupSlider(spectralAmount, a.shift());
+        }
         UI.compile();
     },
 
@@ -1466,6 +1511,8 @@ appShell.addEventListener('click', function(event)
     uniform float uEmissionRamp;
     uniform float uContrast;
     uniform float uBlackPoint;
+    uniform vec3 uSpectralBands;
+    uniform float uSpectralAmount;
     varying vec2 vTexCoord;
     varying vec2 vScreenCoord;
     void main (void)
@@ -1479,8 +1526,10 @@ appShell.addEventListener('click', function(event)
             light += 0.4*scatter.g * (2.0+1.0*screen.g + 0.5*screen.r);
             float tlight = 1.0-pow(2.0, -uExposure*light);
             tlight = max(0.0, tlight-uBlackPoint)/max(0.001, 1.0-uBlackPoint);
+            tlight = clamp(tlight*(1.0+uSpectralAmount*(0.18*uSpectralBands.x+0.12*uSpectralBands.y+0.22*uSpectralBands.z)), 0.0, 1.0);
             float tlight2 = tlight*tlight*tlight;
-            float coreMix = clamp(0.05+uEmissionRamp*0.5+tlight2*tlight2*0.5, 0.0, 1.0);
+            float spectralBalance = uSpectralAmount*(uSpectralBands.z-uSpectralBands.x)*0.35;
+            float coreMix = clamp(0.05+uEmissionRamp*0.5+tlight2*tlight2*0.5+spectralBalance, 0.0, 1.0);
             vec3 emissionColour = mix(uHaloColour, uCoreColour, coreMix);
             vec3 sceneColour = mix(uBackgroundColour, emissionColour, tlight);
             gl_FragColor.rgb = clamp(uBackgroundColour+(sceneColour-uBackgroundColour)*uContrast, 0.0, 1.0);

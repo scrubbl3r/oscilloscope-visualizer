@@ -37,7 +37,12 @@ var AudioSystem =
         this.source.connect(this.scopeNode);
     	this.generator.connect(this.scopeNode);
 
-        this.scopeNode.connect(this.audioVolumeNode);
+		this.analyser = this.audioContext.createAnalyser();
+		this.analyser.fftSize = 2048;
+		this.analyser.smoothingTimeConstant = 0.0;
+		this.frequencyData = new Uint8Array(this.analyser.frequencyBinCount);
+        this.scopeNode.connect(this.analyser);
+        this.analyser.connect(this.audioVolumeNode);
         this.audioVolumeNode.connect(this.audioContext.destination);
     },
 
@@ -374,6 +379,8 @@ var Render =
 		this.outputShader.uEmissionRamp = gl.getUniformLocation(this.outputShader, "uEmissionRamp");
 		this.outputShader.uContrast = gl.getUniformLocation(this.outputShader, "uContrast");
 		this.outputShader.uBlackPoint = gl.getUniformLocation(this.outputShader, "uBlackPoint");
+		this.outputShader.uSpectralBands = gl.getUniformLocation(this.outputShader, "uSpectralBands");
+		this.outputShader.uSpectralAmount = gl.getUniformLocation(this.outputShader, "uSpectralAmount");
 		this.outputShader.uCanvasAspect = gl.getUniformLocation(this.outputShader, "uCanvasAspect");
 
 		this.texturedShader = this.createShader("texturedVertex","texturedFragment");
@@ -542,7 +549,42 @@ var Render =
 		gl.uniform1f(this.outputShader.uEmissionRamp, controls.emissionRamp);
 		gl.uniform1f(this.outputShader.uContrast, controls.contrast);
 		gl.uniform1f(this.outputShader.uBlackPoint, controls.blackPoint);
+		gl.uniform3fv(this.outputShader.uSpectralBands, this.updateSpectralBands());
+		gl.uniform1f(this.outputShader.uSpectralAmount, controls.spectralColor ? controls.spectralAmount : 0.0);
 		this.drawTexture(this.lineTexture, this.blur1Texture, this.blur3Texture, this.screenTexture);
+	},
+
+	spectralBands : new Float32Array(3),
+
+	updateSpectralBands : function()
+	{
+		if (!AudioSystem.analyser || !controls.spectralColor)
+		{
+			this.spectralBands[0] *= 0.9;
+			this.spectralBands[1] *= 0.9;
+			this.spectralBands[2] *= 0.9;
+			return this.spectralBands;
+		}
+
+		AudioSystem.analyser.getByteFrequencyData(AudioSystem.frequencyData);
+		var binHz = AudioSystem.sampleRate/AudioSystem.analyser.fftSize;
+		var ranges = [[20, 200], [200, 2500], [2500, 16000]];
+		for (var band=0; band<ranges.length; band++)
+		{
+			var firstBin = Math.max(1, Math.floor(ranges[band][0]/binHz));
+			var lastBin = Math.min(AudioSystem.frequencyData.length-1, Math.ceil(ranges[band][1]/binHz));
+			var sum = 0;
+			for (var bin=firstBin; bin<=lastBin; bin++)
+			{
+				var value = AudioSystem.frequencyData[bin]/255;
+				sum += value*value;
+			}
+			var energy = Math.sqrt(sum/Math.max(1, lastBin-firstBin+1));
+			energy = Math.max(0, Math.min(1, (energy-0.04)/0.55));
+			var smoothing = energy > this.spectralBands[band] ? 0.35 : 0.08;
+			this.spectralBands[band] += (energy-this.spectralBands[band])*smoothing;
+		}
+		return this.spectralBands;
 	},
 
 	getColourFromHex : function(hexColour)
