@@ -2,6 +2,7 @@
 var AudioSystem =
 {
 	microphoneActive : false,
+	microphoneConnected : false,
 	previousAudioVolume : 1.0,
 
     init : function (bufferSize)
@@ -44,7 +45,11 @@ var AudioSystem =
     {
         if (this.microphoneActive)
         {
-            AudioSystem.microphone.connect(AudioSystem.scopeNode);
+			if (!this.microphoneConnected)
+			{
+				AudioSystem.microphone.connect(AudioSystem.scopeNode);
+				this.microphoneConnected = true;
+			}
 			this.mutePlaybackForMicrophone();
             return;
         }
@@ -66,7 +71,9 @@ var AudioSystem =
 
 	disconnectMicrophone : function()
 	{
-		if (this.microphone) this.microphone.disconnect();
+		if (!this.microphone || !this.microphoneConnected) return;
+		this.microphone.disconnect();
+		this.microphoneConnected = false;
 	},
 
 	mutePlaybackForMicrophone : function()
@@ -75,12 +82,26 @@ var AudioSystem =
 		if (currentVolume > 0) this.previousAudioVolume = currentVolume;
 		audioVolume.value = 0.0;
 		audioVolume.oninput();
+		if (this.audioVolumeNode) this.audioVolumeNode.gain.value = 0.0;
 	},
 
 	restorePlaybackVolume : function()
 	{
 		audioVolume.value = this.previousAudioVolume;
 		audioVolume.oninput();
+		if (this.audioVolumeNode) this.audioVolumeNode.gain.value = this.previousAudioVolume;
+	},
+
+	resumeFilePlayback : function(audioElement)
+	{
+		this.restorePlaybackVolume();
+		var resumeContext = this.audioContext.state === "suspended"
+			? this.audioContext.resume()
+			: Promise.resolve();
+		return resumeContext.then(function()
+		{
+			return audioElement.play();
+		}).catch(function() {});
 	}
 }
 
@@ -96,6 +117,7 @@ onStream = function(stream)
     AudioSystem.microphoneActive = true;
 	  AudioSystem.microphone = AudioSystem.audioContext.createMediaStreamSource(stream);
 	  AudioSystem.microphone.connect(AudioSystem.scopeNode);
+	AudioSystem.microphoneConnected = true;
 
     AudioSystem.mutePlaybackForMicrophone();
 };

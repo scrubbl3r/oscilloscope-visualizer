@@ -820,8 +820,7 @@ var selectMicrophoneSource = function(enabled)
     else
     {
         AudioSystem.disconnectMicrophone();
-        AudioSystem.restorePlaybackVolume();
-        if (audioElementControl.src) audioElementControl.play().catch(function() {});
+        if (audioElementControl.src) AudioSystem.resumeFilePlayback(audioElementControl);
     }
 };
 
@@ -851,13 +850,12 @@ var loadAudioFile = function(audioFileToLoad)
     if (window.activateApp) activateApp();
     micCheckbox.checked = false;
     AudioSystem.disconnectMicrophone();
-    AudioSystem.restorePlaybackVolume();
     if (file) URL.revokeObjectURL(file)
     file = URL.createObjectURL(audioFileToLoad);
     audioElementControl.src = file;
     audioElementControl.loop = true;
     audioLoop.setAttribute('aria-pressed', 'true');
-    audioElementControl.play().catch(function() {});
+    AudioSystem.resumeFilePlayback(audioElementControl);
     if (startMessage) startMessage.remove();
     startupAudioPickerArmed = false;
     document.removeEventListener('click', openStartupAudioPicker, true);
@@ -891,7 +889,7 @@ audioFileInput.onchange = function()
 audioPlayPause.addEventListener('click', function()
 {
     if (!audioElementControl.src) return;
-    if (audioElementControl.paused) audioElementControl.play().catch(function() {});
+    if (audioElementControl.paused) AudioSystem.resumeFilePlayback(audioElementControl);
     else audioElementControl.pause();
 });
 
