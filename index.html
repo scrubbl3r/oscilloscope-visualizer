@@ -465,8 +465,8 @@ var controls=
 	exposureStops : 0.0,
 	audioVolume : 1.0,
 	hue : 15,
-	coreColor : "#fff0dc",
-	haloColor : "#ff3b0a",
+	coreColor : "#7e1738",
+	haloColor : "#f1ff53",
 	aspectWidth : 9,
 	aspectHeight : 6,
 	freezeImage: false,
@@ -477,7 +477,7 @@ var controls=
 	bExponent :0.0,
 	invertXY : false,
 	grid : true,
-	persistence : 0,
+	persistence : 0.9,
 	xExpression : "sin(2*PI*a*t)*cos(2*PI*b*t)",
 	yExpression : "cos(2*PI*a*t)*cos(2*PI*b*t)",
 }
@@ -795,17 +795,17 @@ var updateAspectRatio = function()
 <div id="emissionControls">
 <div id="emissionColorRow">
 <label class="colorWellControl">CORE COLOR
-<input id="coreColor" type="color" value="#fff0dc" oninput="controls.coreColor=this.value">
+<input id="coreColor" type="color" value="#7e1738" oninput="controls.coreColor=this.value">
 </label>
 <label class="colorWellControl">HALO COLOR
-<input id="haloColor" type="color" value="#ff3b0a" oninput="controls.haloColor=this.value">
+<input id="haloColor" type="color" value="#f1ff53" oninput="controls.haloColor=this.value">
 </label>
 </div>
 <label id="persistenceControl">
 <span>PERSISTENCE</span>
-<input id="persistence" type="range" min="-1" max="1" value=0 step=0.01
+<input id="persistence" type="range" min="-1" max="1" value=0.9 step=0.01
 oninput="controls.persistence=this.value; persistenceOutput.value=parseFloat(this.value).toFixedMinus(1)">
-<output id="persistenceOutput">0.00</output>
+<output id="persistenceOutput">+0.9</output>
 </label>
 <div id="emissionOptions">
 <label><input id="freeze" type="checkbox" onchange="controls.freezeImage=this.checked"> FREEZE</label>
