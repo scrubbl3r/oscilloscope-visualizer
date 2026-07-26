@@ -99,8 +99,10 @@ input[type="number"] {
   min-height: 25px;
   padding: 3px 7px;
   color: #ff6938;
-  background: var(--slate-800);
-  border: 1px solid var(--slate-650);
+  background:
+    linear-gradient(#000, #000) padding-box,
+    linear-gradient(var(--hot-orange), var(--hot-orange)) border-box;
+  border: 1px solid transparent;
   border-radius: 0;
   clip-path: polygon(
     5px 0,
@@ -115,8 +117,7 @@ input[type="number"] {
 
 input[type="text"]:focus,
 input[type="number"]:focus {
-  border-color: var(--toxic-yellow);
-  box-shadow: 0 0 0 1px rgba(239, 255, 31, 0.18);
+  filter: drop-shadow(0 0 3px rgba(255, 59, 10, 0.5));
 }
 
 input[type="checkbox"] {
