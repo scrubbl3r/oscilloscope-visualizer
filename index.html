@@ -3,16 +3,16 @@
 <style>
 :root {
   color-scheme: dark;
-  --slate-950: #0b1013;
-  --slate-900: #10171b;
-  --slate-850: #151e23;
-  --slate-800: #1a252b;
-  --slate-750: #202d33;
-  --slate-650: #34434a;
-  --text: #c4cdd1;
-  --text-dim: #7f8d93;
-  --hot-orange: #ff4f1f;
-  --hot-red: #e52b18;
+  --slate-950: #0c0c0c;
+  --slate-900: #121212;
+  --slate-850: #181818;
+  --slate-800: #202020;
+  --slate-750: #292929;
+  --slate-650: #414141;
+  --text: #d76835;
+  --text-dim: #8f5033;
+  --hot-orange: #f05a28;
+  --hot-red: #cf351d;
   --toxic-yellow: #e7f23b;
 }
 
@@ -41,7 +41,7 @@ body {
 }
 
 #title {
-  color: #edf1f2;
+  color: var(--hot-orange);
   font-weight: 750;
   letter-spacing: 0.09em;
 }
@@ -72,7 +72,7 @@ canvas {
   display: block;
   margin-right: 12px;
   background: black;
-  outline: 1px solid #263239;
+  outline: 1px solid #292929;
 }
 
 #clicktostart {
@@ -98,7 +98,7 @@ input[type="text"],
 input[type="number"] {
   min-height: 25px;
   padding: 3px 7px;
-  color: #e4eaec;
+  color: #e17a4b;
   background: var(--slate-800);
   border: 1px solid var(--slate-650);
   border-radius: 0;
@@ -135,7 +135,7 @@ input[type="range"] {
 input[type="range"]::-webkit-slider-runnable-track {
   height: 4px;
   background: var(--slate-750);
-  border: 1px solid #3a4b52;
+  border: 1px solid #454545;
   border-radius: 0;
 }
 
@@ -145,7 +145,7 @@ input[type="range"]::-webkit-slider-thumb {
   margin-top: -5px;
   appearance: none;
   background: var(--hot-orange);
-  border: 1px solid #ff7953;
+  border: 1px solid #ff7848;
   border-radius: 0;
   clip-path: polygon(3px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 3px);
   box-shadow: 0 0 8px rgba(255, 79, 31, 0.34);
@@ -154,7 +154,7 @@ input[type="range"]::-webkit-slider-thumb {
 input[type="range"]::-moz-range-track {
   height: 4px;
   background: var(--slate-750);
-  border: 1px solid #3a4b52;
+  border: 1px solid #454545;
   border-radius: 0;
 }
 
@@ -162,7 +162,7 @@ input[type="range"]::-moz-range-thumb {
   width: 13px;
   height: 13px;
   background: var(--hot-orange);
-  border: 1px solid #ff7953;
+  border: 1px solid #ff7848;
   border-radius: 0;
   clip-path: polygon(3px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 3px);
   box-shadow: 0 0 8px rgba(255, 79, 31, 0.34);
