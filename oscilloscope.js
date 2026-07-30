@@ -952,13 +952,18 @@ function doScriptProcessor(event)
     if (controls.sweepOn)
     {
         var gain = Math.pow(2.0,controls.mainGain);
+        var sweepAspect = Render.canvas.width/Render.canvas.height;
         var sweepMinTime = controls.sweepMsDiv*10/1000;
         var triggerValue = controls.sweepTriggerValue;
         for (var i=0; i<length; i++)
         {
-            xSamples[i] = sweepPosition / gain;
+            // The line shader preserves square signal geometry by dividing x by
+            // the viewport aspect. Cancel that only for the sweep time axis so
+            // its symmetric phase fills the rectangular viewport.
+            xSamples[i] = sweepPosition*sweepAspect/gain;
             sweepPosition += 2*AudioSystem.timePerSample/sweepMinTime;
-            if (sweepPosition > 1.0 && belowTrigger && ySamples[i]>=triggerValue)
+            var crossedTrigger = belowTrigger && ySamples[i]>=triggerValue;
+            if (sweepPosition > 1.0 || (sweepPosition > 0.95 && crossedTrigger))
                 sweepPosition = -1.0;
             belowTrigger = ySamples[i]<triggerValue;
         }
