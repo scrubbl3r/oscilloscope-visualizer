@@ -26,8 +26,8 @@ The initial bank is:
 | Computer key | MIDI note | Sample |
 | --- | ---: | --- |
 | `1` | 12 (C0) | `012-C0-tower-01-stems.wav` |
-| `2` | 14 (D0) | `014-D0-mirror-mask-01.wav` |
-| `3` | 16 (E0) | `016-E0-tower-02.wav` |
+| `3` | 14 (D0) | `014-D0-mirror-mask-01.wav` |
+| `5` | 16 (E0) | `016-E0-tower-02.wav` |
 
 MIDI Note On starts the mapped sample. MIDI Note Off is ignored. Triggering
 another sample immediately stops the current sample and starts the new one.
@@ -35,6 +35,18 @@ The existing Loop button controls whether the active sample repeats.
 An unmapped note stops the active latch.
 
 ## MIDI controls
+
+The physical number row maps chromatically: `1 2 3 4 5 6 7 8 9 0 - =`
+corresponds to C0 through B0. Unmapped notes and number-row keys stop the active
+sample latch.
+
+Shift plus the same twelve physical keys maps to C1 through B1. C1 is reserved
+for Sweep. C♯1 through B1 recall eleven locally stored emission presets.
+
+Clicking a preset square captures Background, Core, Halo, Core/Halo balance,
+Persistence, Contrast, and Black Point. Presets are stored in browser
+`localStorage` and survive reloads. The C1 square is non-interactive and shows
+the Sweep state.
 
 MIDI note 24 (C1) toggles Sweep mode. MIDI channel 1 controller assignments:
 
@@ -46,4 +58,4 @@ MIDI note 24 (C1) toggles Sweep mode. MIDI channel 1 controller assignments:
 | 23 | Core/Halo balance |
 
 Press `CONNECT` in the MIDI Bank section to grant Chromium access to a connected
-MIDI keyboard. Computer keys `1`, `2`, and `3` work without MIDI hardware.
+MIDI keyboard.

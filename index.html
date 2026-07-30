@@ -131,6 +131,62 @@ body {
   white-space: nowrap;
 }
 
+#presetPanel {
+  display: grid;
+  grid-template-columns: 55px minmax(0, 1fr);
+  gap: 4px;
+  align-items: center;
+  margin-top: 3px;
+}
+
+#presetPanelTitle {
+  font-size: 10px;
+}
+
+#presetSquares {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 2px;
+}
+
+.presetSquare {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  height: 20px;
+  padding: 0;
+  border: 1px solid var(--slate-650);
+  color: var(--text-dim);
+  background: #000;
+  clip-path: polygon(3px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 3px);
+  font-size: 6px;
+  line-height: 18px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.presetSquare.stored {
+  border-color: var(--hot-orange);
+  color: #000;
+}
+
+.presetSquare.selected {
+  outline: 1px solid var(--toxic-yellow);
+  outline-offset: 1px;
+}
+
+.presetSquare.reserved {
+  border-color: var(--text-dim);
+  color: var(--hot-orange);
+  background: repeating-linear-gradient(135deg, #000 0 4px, #252525 4px 7px);
+  cursor: not-allowed;
+}
+
+.presetSquare.reserved.active {
+  color: #000;
+  background: var(--hot-orange);
+}
+
 #emissionRamp {
   flex: 1;
   min-width: 42px;
@@ -142,7 +198,7 @@ body {
 
 @media (max-height: 760px) {
   #controlsPanel {
-    padding: 5px 10px;
+    padding: 3px 10px;
   }
 
   #controlsPanel p {
@@ -154,7 +210,16 @@ body {
   }
 
   #controlsPanel hr {
-    margin: 2px 0;
+    margin: 1px 0;
+  }
+
+  #presetPanel {
+    margin-top: 1px;
+  }
+
+  .presetSquare {
+    height: 16px;
+    line-height: 14px;
   }
 }
 
@@ -788,7 +853,8 @@ Thanks to e1ml and ompuco for inspiration.</i>
 <hr noshade>
 
 <p><b style="font-size:18px">
-<input id="sweepCheckbox" type="checkbox" onchange="controls.sweepOn=this.checked"> SWEEP</b>
+<input id="sweepCheckbox" type="checkbox"
+onchange="controls.sweepOn=this.checked; if(typeof updatePresetSquares==='function') updatePresetSquares()"> SWEEP</b>
 
 <table>
 <tr>
@@ -925,9 +991,9 @@ var startMessage = document.getElementById('clicktostart');
 var startupAudioPickerArmed = true;
 var sampleBank = [];
 var sampleByNote = {};
-var sampleByKey = {};
 var activeSampleNote = null;
 var midiAccess = null;
+var numberRowCodes = ['Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Digit6', 'Digit7', 'Digit8', 'Digit9', 'Digit0', 'Minus', 'Equal'];
 
 var selectMicrophoneSource = function(enabled)
 {
@@ -1006,6 +1072,7 @@ var toggleSweepMode = function()
     sweepCheckbox.checked = !sweepCheckbox.checked;
     controls.sweepOn = sweepCheckbox.checked;
     if (controls.sweepOn && typeof sweepPosition !== 'undefined') sweepPosition = -1.0;
+    if (typeof updatePresetSquares === 'function') updatePresetSquares();
     midiStatus.value = 'SWEEP '+(controls.sweepOn ? 'ON' : 'OFF');
 };
 
@@ -1044,12 +1111,10 @@ var renderSampleBank = function(bank)
 {
     sampleBank = bank.samples || [];
     sampleByNote = {};
-    sampleByKey = {};
     samplePads.replaceChildren();
     sampleBank.forEach(function(sample)
     {
         sampleByNote[sample.note] = sample;
-        sampleByKey[sample.key] = sample;
         var pad = document.createElement('button');
         pad.type = 'button';
         pad.className = 'samplePad';
@@ -1093,9 +1158,10 @@ var bindMidiInputs = function()
                 return;
             }
             if (command !== 0x90 || data2 === 0) return;
-            if (data1 === 24)
+            if (data1 >= 24 && data1 <= 35)
             {
-                toggleSweepMode();
+                if (data1 === 24) toggleSweepMode();
+                else recallEmissionPreset(data1-24);
                 return;
             }
             var sample = sampleByNote[data1];
@@ -1130,20 +1196,25 @@ document.addEventListener('keydown', function(event)
     var target = event.target;
     var isEditing = target.matches('input, textarea, select') || target.isContentEditable;
     if (isEditing || event.repeat || event.ctrlKey || event.metaKey || event.altKey) return;
-    var sample = sampleByKey[event.key];
-    if (!sample)
+    var keyIndex = numberRowCodes.indexOf(event.code);
+    if (keyIndex < 0) return;
+    event.preventDefault();
+    if (event.shiftKey)
     {
-        if (/^Digit[0-9]$/.test(event.code)) stopActiveSample('EMPTY KEY '+event.key);
+        if (keyIndex === 0) toggleSweepMode();
+        else recallEmissionPreset(keyIndex);
         return;
     }
-    event.preventDefault();
-    triggerSample(sample);
+    var note = 12+keyIndex;
+    var sample = sampleByNote[note];
+    if (sample) triggerSample(sample);
+    else stopActiveSample('EMPTY N'+note);
 });
 
 var openStartupAudioPicker = function(event)
 {
     if (!startupAudioPickerArmed || event.detail === 0 || event.target === audioFileInput) return;
-    if (event.target.closest('#midiBankSection')) return;
+    if (event.target.closest('#midiBankSection, #presetPanel')) return;
     if (micCheckbox.checked)
     {
         if (event.target === micCheckbox) return;
@@ -1279,6 +1350,140 @@ oninput="controls.persistence=this.value; persistenceOutput.value=parseFloat(thi
 onchange="controls.grid=!controls.grid; if (Render) Render.screenTexture = Render.loadTexture('noise.jpg');"> HIDE GRATICULE</label>
 </div>
 </div>
+
+<div id="presetPanel">
+<b id="presetPanelTitle">PRESETS</b>
+<div id="presetSquares" role="group" aria-label="Emission presets C1 through B1"></div>
+</div>
+
+<script>
+var emissionPresetStorageKey = 'oscilloscope-emission-presets-v1';
+var emissionPresetNames = ['C1', 'C♯1', 'D1', 'D♯1', 'E1', 'F1', 'F♯1', 'G1', 'G♯1', 'A1', 'A♯1', 'B1'];
+var emissionPresets = new Array(12).fill(null);
+var selectedPresetIndex = null;
+
+try
+{
+    var storedEmissionPresets = JSON.parse(localStorage.getItem(emissionPresetStorageKey));
+    if (Array.isArray(storedEmissionPresets))
+    {
+        for (var presetIndex=1; presetIndex<12; presetIndex++)
+            emissionPresets[presetIndex] = storedEmissionPresets[presetIndex] || null;
+    }
+}
+catch (error) {}
+
+var getEmissionSnapshot = function()
+{
+    return {
+        backgroundColor: backgroundColor.value,
+        coreColor: coreColor.value,
+        haloColor: haloColor.value,
+        emissionRamp: emissionRamp.value,
+        contrast: contrast.value,
+        blackPoint: blackPoint.value,
+        persistence: persistence.value
+    };
+};
+
+var setEmissionInput = function(input, value)
+{
+    input.value = value;
+    input.dispatchEvent(new Event('input', {bubbles: true}));
+};
+
+var applyEmissionPreset = function(preset)
+{
+    setEmissionInput(backgroundColor, preset.backgroundColor);
+    setEmissionInput(coreColor, preset.coreColor);
+    setEmissionInput(haloColor, preset.haloColor);
+    setEmissionInput(emissionRamp, preset.emissionRamp);
+    setEmissionInput(contrast, preset.contrast);
+    setEmissionInput(blackPoint, preset.blackPoint);
+    setEmissionInput(persistence, preset.persistence);
+};
+
+var updatePresetSquares = function()
+{
+    document.querySelectorAll('.presetSquare').forEach(function(square)
+    {
+        var index = Number(square.dataset.presetIndex);
+        if (index === 0)
+        {
+            square.classList.toggle('active', controls.sweepOn);
+            return;
+        }
+        var preset = emissionPresets[index];
+        square.classList.toggle('stored', !!preset);
+        square.classList.toggle('selected', selectedPresetIndex === index);
+        square.style.background = preset
+            ? 'linear-gradient(135deg, '+preset.backgroundColor+' 0 28%, '+preset.coreColor+' 28% 64%, '+preset.haloColor+' 64% 100%)'
+            : '#000';
+    });
+};
+
+var saveEmissionPresets = function()
+{
+    localStorage.setItem(emissionPresetStorageKey, JSON.stringify(emissionPresets));
+};
+
+var captureEmissionPreset = function(index)
+{
+    emissionPresets[index] = getEmissionSnapshot();
+    selectedPresetIndex = index;
+    saveEmissionPresets();
+    updatePresetSquares();
+    midiStatus.value = 'CAPTURED '+emissionPresetNames[index];
+};
+
+var recallEmissionPreset = function(index)
+{
+    var preset = emissionPresets[index];
+    if (!preset)
+    {
+        midiStatus.value = 'EMPTY PRESET '+emissionPresetNames[index];
+        return;
+    }
+    applyEmissionPreset(preset);
+    selectedPresetIndex = null;
+    updatePresetSquares();
+    midiStatus.value = 'PRESET '+emissionPresetNames[index];
+};
+
+emissionPresetNames.forEach(function(name, index)
+{
+    var square = document.createElement('button');
+    square.type = 'button';
+    square.className = 'presetSquare'+(index === 0 ? ' reserved' : '');
+    square.dataset.presetIndex = index;
+    square.textContent = name.replace('1', '');
+    square.title = index === 0 ? 'C1 reserved for Sweep toggle' : name+' — click to capture current emission';
+    square.setAttribute('aria-label', square.title);
+    if (index === 0)
+    {
+        square.disabled = true;
+        square.setAttribute('aria-disabled', 'true');
+    }
+    else
+    {
+        square.addEventListener('click', function(event)
+        {
+            event.stopPropagation();
+            captureEmissionPreset(index);
+        });
+    }
+    presetSquares.appendChild(square);
+});
+
+document.addEventListener('click', function(event)
+{
+    if (event.target.closest('.presetSquare')) return;
+    selectedPresetIndex = null;
+    updatePresetSquares();
+});
+
+updatePresetSquares();
+</script>
 
 
 <input id="urlText" type="text" size="28" style="margin-top:5px" onclick="Controls.generateUrl()"

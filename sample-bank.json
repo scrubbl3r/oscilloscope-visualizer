@@ -9,13 +9,13 @@
     },
     {
       "note": 14,
-      "key": "2",
+      "key": "3",
       "name": "MIRROR MASK 01",
       "file": "samples/014-D0-mirror-mask-01.wav"
     },
     {
       "note": 16,
-      "key": "3",
+      "key": "5",
       "name": "TOWER 02",
       "file": "samples/016-E0-tower-02.wav"
     }
