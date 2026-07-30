@@ -43,10 +43,13 @@ sample latch.
 Shift plus the same twelve physical keys maps to C1 through B1. C1 is reserved
 for Sweep. C♯1 through B1 recall eleven locally stored emission presets.
 
-Clicking a preset square captures Background, Core, Halo, Core/Halo balance,
-Persistence, Contrast, and Black Point. Presets are stored in browser
-`localStorage` and survive reloads. The C1 square is non-interactive and shows
-the Sweep state.
+The PRESETS button opens a floating capture editor. Selecting C♯1 through B1
+loads that slot's locked settings, or the startup defaults for an empty slot.
+While the editor is open, changes to Background, Core, Halo, Persistence,
+Contrast, and Black Point update only the selected draft. Switching squares
+preserves each draft independently. Closing the editor commits and locks every
+draft in browser `localStorage`. The C1 square is non-interactive and shows the
+Sweep state.
 
 MIDI note 24 (C1) toggles Sweep mode. MIDI channel 1 controller assignments:
 

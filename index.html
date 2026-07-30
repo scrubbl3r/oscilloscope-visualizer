@@ -132,35 +132,87 @@ body {
 }
 
 #presetPanel {
-  display: grid;
-  grid-template-columns: 55px minmax(0, 1fr);
-  gap: 4px;
-  align-items: center;
   margin-top: 3px;
 }
 
-#presetPanelTitle {
-  font-size: 10px;
+#presetButton {
+  width: 100%;
+  min-height: 23px;
+  padding: 3px 10px;
+  border: 0;
+  color: #000;
+  background: var(--hot-orange);
+  clip-path: polygon(4px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 4px);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-align: left;
+  cursor: pointer;
+}
+
+#presetButton:hover,
+#presetButton[aria-expanded="true"] {
+  background: #ff6a36;
+}
+
+#presetPopup {
+  position: fixed;
+  z-index: 20;
+  right: 382px;
+  bottom: 18px;
+  display: none;
+  width: 306px;
+  padding: 8px;
+  background: var(--slate-850);
+  border: 1px solid var(--hot-orange);
+  box-shadow: 0 12px 38px rgba(0, 0, 0, 0.72);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 8px);
+}
+
+#presetPopup.open {
+  display: grid;
+  gap: 7px;
+}
+
+#presetPopupHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+#presetPopupHeader b {
+  font-size: 11px;
+}
+
+#presetClose {
+  width: 20px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  color: var(--hot-orange);
+  background: #000;
+  font-weight: 900;
+  cursor: pointer;
 }
 
 #presetSquares {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: 2px;
+  gap: 3px;
 }
 
 .presetSquare {
   position: relative;
   width: 100%;
   min-width: 0;
-  height: 20px;
+  height: 23px;
   padding: 0;
   border: 1px solid var(--slate-650);
   color: var(--text-dim);
   background: #000;
   clip-path: polygon(3px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 3px);
-  font-size: 6px;
-  line-height: 18px;
+  font-size: 7px;
+  line-height: 21px;
   text-align: center;
   cursor: pointer;
 }
@@ -171,8 +223,8 @@ body {
 }
 
 .presetSquare.selected {
-  outline: 1px solid var(--toxic-yellow);
-  outline-offset: 1px;
+  border-color: var(--toxic-yellow);
+  box-shadow: 0 0 8px rgba(239, 255, 31, 0.7);
 }
 
 .presetSquare.reserved {
@@ -213,13 +265,10 @@ body {
     margin: 1px 0;
   }
 
-  #presetPanel {
-    margin-top: 1px;
-  }
-
-  .presetSquare {
-    height: 16px;
-    line-height: 14px;
+  #presetButton {
+    min-height: 19px;
+    padding-top: 1px;
+    padding-bottom: 1px;
   }
 }
 
@@ -1311,36 +1360,36 @@ var updateAspectRatio = function()
 <div id="emissionControls">
 <label id="backgroundControl" class="colorWellControl">BACKGROUND COLOR
 <input id="backgroundColor" type="color" value="#000000"
-oninput="controls.backgroundColor=this.value">
+oninput="controls.backgroundColor=this.value; if(typeof captureActivePreset==='function') captureActivePreset()">
 </label>
 <div id="emissionColorRow">
 <label class="colorWellControl">CORE COLOR
 <input id="coreColor" type="color" value="#b726f6"
-oninput="controls.coreColor=this.value; updateEmissionRamp()">
+oninput="controls.coreColor=this.value; updateEmissionRamp(); if(typeof captureActivePreset==='function') captureActivePreset()">
 </label>
 <input id="emissionRamp" type="range" min="0" max="1" value="0.5" step="0.01"
 aria-label="Core to halo balance" oninput="controls.emissionRamp=this.value">
 <label class="colorWellControl">HALO COLOR
 <input id="haloColor" type="color" value="#ee7b30"
-oninput="controls.haloColor=this.value; updateEmissionRamp()">
+oninput="controls.haloColor=this.value; updateEmissionRamp(); if(typeof captureActivePreset==='function') captureActivePreset()">
 </label>
 </div>
 <label id="contrastControl">
 <span>CONTRAST</span>
 <input id="contrast" type="range" min="0" max="2.5" value="1" step="0.01"
-oninput="controls.contrast=this.value; contrastOutput.value=parseFloat(this.value).toFixed(2)">
+oninput="controls.contrast=this.value; contrastOutput.value=parseFloat(this.value).toFixed(2); if(typeof captureActivePreset==='function') captureActivePreset()">
 <output id="contrastOutput">1.00</output>
 </label>
 <label id="blackPointControl">
 <span>BLACK POINT</span>
 <input id="blackPoint" type="range" min="0" max="0.5" value="0.04" step="0.005"
-oninput="controls.blackPoint=this.value; blackPointOutput.value=parseFloat(this.value).toFixed(3)">
+oninput="controls.blackPoint=this.value; blackPointOutput.value=parseFloat(this.value).toFixed(3); if(typeof captureActivePreset==='function') captureActivePreset()">
 <output id="blackPointOutput">0.040</output>
 </label>
 <label id="persistenceControl">
 <span>PERSISTENCE</span>
 <input id="persistence" type="range" min="-1" max="1" value=0.9 step=0.01
-oninput="controls.persistence=this.value; persistenceOutput.value=parseFloat(this.value).toFixedMinus(1)">
+oninput="controls.persistence=this.value; persistenceOutput.value=parseFloat(this.value).toFixedMinus(1); if(typeof captureActivePreset==='function') captureActivePreset()">
 <output id="persistenceOutput">+0.9</output>
 </label>
 <div id="emissionOptions">
@@ -1352,15 +1401,24 @@ onchange="controls.grid=!controls.grid; if (Render) Render.screenTexture = Rende
 </div>
 
 <div id="presetPanel">
-<b id="presetPanelTitle">PRESETS</b>
+<button id="presetButton" type="button" aria-expanded="false" aria-controls="presetPopup">PRESETS</button>
+<div id="presetPopup" role="dialog" aria-label="Emission preset editor" aria-hidden="true">
+<div id="presetPopupHeader">
+<b>PRESET CAPTURE · C1–B1</b>
+<button id="presetClose" type="button" aria-label="Close and lock presets">×</button>
+</div>
 <div id="presetSquares" role="group" aria-label="Emission presets C1 through B1"></div>
+</div>
 </div>
 
 <script>
 var emissionPresetStorageKey = 'oscilloscope-emission-presets-v1';
 var emissionPresetNames = ['C1', 'C♯1', 'D1', 'D♯1', 'E1', 'F1', 'F♯1', 'G1', 'G♯1', 'A1', 'A♯1', 'B1'];
 var emissionPresets = new Array(12).fill(null);
+var emissionPresetDrafts = null;
 var selectedPresetIndex = null;
+var presetEditorOpen = false;
+var applyingEmissionPreset = false;
 
 try
 {
@@ -1379,7 +1437,6 @@ var getEmissionSnapshot = function()
         backgroundColor: backgroundColor.value,
         coreColor: coreColor.value,
         haloColor: haloColor.value,
-        emissionRamp: emissionRamp.value,
         contrast: contrast.value,
         blackPoint: blackPoint.value,
         persistence: persistence.value
@@ -1397,14 +1454,16 @@ var applyEmissionPreset = function(preset)
     setEmissionInput(backgroundColor, preset.backgroundColor);
     setEmissionInput(coreColor, preset.coreColor);
     setEmissionInput(haloColor, preset.haloColor);
-    setEmissionInput(emissionRamp, preset.emissionRamp);
     setEmissionInput(contrast, preset.contrast);
     setEmissionInput(blackPoint, preset.blackPoint);
     setEmissionInput(persistence, preset.persistence);
 };
 
+var startupEmissionPreset = getEmissionSnapshot();
+
 var updatePresetSquares = function()
 {
+    var visiblePresets = presetEditorOpen ? emissionPresetDrafts : emissionPresets;
     document.querySelectorAll('.presetSquare').forEach(function(square)
     {
         var index = Number(square.dataset.presetIndex);
@@ -1413,9 +1472,9 @@ var updatePresetSquares = function()
             square.classList.toggle('active', controls.sweepOn);
             return;
         }
-        var preset = emissionPresets[index];
+        var preset = visiblePresets[index];
         square.classList.toggle('stored', !!preset);
-        square.classList.toggle('selected', selectedPresetIndex === index);
+        square.classList.toggle('selected', presetEditorOpen && selectedPresetIndex === index);
         square.style.background = preset
             ? 'linear-gradient(135deg, '+preset.backgroundColor+' 0 28%, '+preset.coreColor+' 28% 64%, '+preset.haloColor+' 64% 100%)'
             : '#000';
@@ -1427,17 +1486,33 @@ var saveEmissionPresets = function()
     localStorage.setItem(emissionPresetStorageKey, JSON.stringify(emissionPresets));
 };
 
-var captureEmissionPreset = function(index)
+var captureActivePreset = function()
 {
-    emissionPresets[index] = getEmissionSnapshot();
-    selectedPresetIndex = index;
-    saveEmissionPresets();
+    if (!presetEditorOpen || selectedPresetIndex === null || selectedPresetIndex === 0 || applyingEmissionPreset) return;
+    emissionPresetDrafts[selectedPresetIndex] = getEmissionSnapshot();
     updatePresetSquares();
-    midiStatus.value = 'CAPTURED '+emissionPresetNames[index];
+    midiStatus.value = 'CAPTURING '+emissionPresetNames[selectedPresetIndex];
+};
+
+var selectEmissionPreset = function(index)
+{
+    if (!presetEditorOpen || index === 0) return;
+    selectedPresetIndex = index;
+    var preset = emissionPresetDrafts[index] || startupEmissionPreset;
+    applyingEmissionPreset = true;
+    applyEmissionPreset(preset);
+    applyingEmissionPreset = false;
+    updatePresetSquares();
+    midiStatus.value = 'CAPTURE '+emissionPresetNames[index];
 };
 
 var recallEmissionPreset = function(index)
 {
+    if (presetEditorOpen)
+    {
+        selectEmissionPreset(index);
+        return;
+    }
     var preset = emissionPresets[index];
     if (!preset)
     {
@@ -1445,9 +1520,38 @@ var recallEmissionPreset = function(index)
         return;
     }
     applyEmissionPreset(preset);
-    selectedPresetIndex = null;
     updatePresetSquares();
     midiStatus.value = 'PRESET '+emissionPresetNames[index];
+};
+
+var openPresetEditor = function()
+{
+    emissionPresetDrafts = emissionPresets.map(function(preset)
+    {
+        return preset ? Object.assign({}, preset) : null;
+    });
+    selectedPresetIndex = null;
+    presetEditorOpen = true;
+    presetPopup.classList.add('open');
+    presetPopup.setAttribute('aria-hidden', 'false');
+    presetButton.setAttribute('aria-expanded', 'true');
+    updatePresetSquares();
+    midiStatus.value = 'PRESET CAPTURE';
+};
+
+var closePresetEditor = function()
+{
+    if (!presetEditorOpen) return;
+    emissionPresets = emissionPresetDrafts;
+    emissionPresetDrafts = null;
+    selectedPresetIndex = null;
+    presetEditorOpen = false;
+    saveEmissionPresets();
+    presetPopup.classList.remove('open');
+    presetPopup.setAttribute('aria-hidden', 'true');
+    presetButton.setAttribute('aria-expanded', 'false');
+    updatePresetSquares();
+    midiStatus.value = 'PRESETS LOCKED';
 };
 
 emissionPresetNames.forEach(function(name, index)
@@ -1469,17 +1573,32 @@ emissionPresetNames.forEach(function(name, index)
         square.addEventListener('click', function(event)
         {
             event.stopPropagation();
-            captureEmissionPreset(index);
+            selectEmissionPreset(index);
         });
     }
     presetSquares.appendChild(square);
 });
 
-document.addEventListener('click', function(event)
+presetButton.addEventListener('click', function(event)
 {
-    if (event.target.closest('.presetSquare')) return;
-    selectedPresetIndex = null;
-    updatePresetSquares();
+    event.stopPropagation();
+    if (presetEditorOpen) closePresetEditor();
+    else openPresetEditor();
+});
+
+presetClose.addEventListener('click', function(event)
+{
+    event.stopPropagation();
+    closePresetEditor();
+});
+
+document.addEventListener('keydown', function(event)
+{
+    if (event.key === 'Escape' && presetEditorOpen)
+    {
+        event.preventDefault();
+        closePresetEditor();
+    }
 });
 
 updatePresetSquares();
