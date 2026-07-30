@@ -26,8 +26,8 @@ The initial bank is:
 | Computer key | MIDI note | Sample |
 | --- | ---: | --- |
 | `1` | 12 (C0) | `012-C0-tower-01-stems.wav` |
-| `3` | 14 (D0) | `014-D0-mirror-mask-01.wav` |
-| `5` | 16 (E0) | `016-E0-tower-02.wav` |
+| `2` | 13 (C♯0) | `013-Cs0-mirror-mask-01.wav` |
+| `3` | 14 (D0) | `014-D0-tower-02.wav` |
 
 MIDI Note On starts the mapped sample. MIDI Note Off is ignored. Triggering
 another sample immediately stops the current sample and starts the new one.

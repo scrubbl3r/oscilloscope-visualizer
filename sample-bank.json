@@ -8,16 +8,16 @@
       "file": "samples/012-C0-tower-01-stems.wav"
     },
     {
-      "note": 14,
-      "key": "3",
+      "note": 13,
+      "key": "2",
       "name": "MIRROR MASK 01",
-      "file": "samples/014-D0-mirror-mask-01.wav"
+      "file": "samples/013-Cs0-mirror-mask-01.wav"
     },
     {
-      "note": 16,
-      "key": "5",
+      "note": 14,
+      "key": "3",
       "name": "TOWER 02",
-      "file": "samples/016-E0-tower-02.wav"
+      "file": "samples/014-D0-tower-02.wav"
     }
   ]
 }
