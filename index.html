@@ -1001,6 +1001,23 @@ var stopActiveSample = function(status)
     syncAudioTransport();
 };
 
+var toggleSweepMode = function()
+{
+    sweepCheckbox.checked = !sweepCheckbox.checked;
+    controls.sweepOn = sweepCheckbox.checked;
+    if (controls.sweepOn && typeof sweepPosition !== 'undefined') sweepPosition = -1.0;
+    midiStatus.value = 'SWEEP '+(controls.sweepOn ? 'ON' : 'OFF');
+};
+
+var setMidiSlider = function(input, midiValue, label)
+{
+    var min = parseFloat(input.min);
+    var max = parseFloat(input.max);
+    input.value = min+(max-min)*(midiValue/127);
+    input.dispatchEvent(new Event('input', {bubbles: true}));
+    midiStatus.value = 'CC '+label+' '+midiValue;
+};
+
 var triggerSample = function(sample)
 {
     if (!sample) return;
@@ -1064,12 +1081,26 @@ var bindMidiInputs = function()
         input.onmidimessage = function(event)
         {
             var command = event.data[0] & 0xf0;
-            var note = event.data[1];
-            var velocity = event.data[2];
-            if (command !== 0x90 || velocity === 0) return;
-            var sample = sampleByNote[note];
+            var channel = (event.data[0] & 0x0f)+1;
+            var data1 = event.data[1];
+            var data2 = event.data[2];
+            if (command === 0xb0 && channel === 1)
+            {
+                if (data1 === 20) setMidiSlider(persistence, data2, 'PERSISTENCE');
+                else if (data1 === 21) setMidiSlider(contrast, data2, 'CONTRAST');
+                else if (data1 === 22) setMidiSlider(blackPoint, data2, 'BLACK POINT');
+                else if (data1 === 23) setMidiSlider(emissionRamp, data2, 'CORE/HALO');
+                return;
+            }
+            if (command !== 0x90 || data2 === 0) return;
+            if (data1 === 24)
+            {
+                toggleSweepMode();
+                return;
+            }
+            var sample = sampleByNote[data1];
             if (sample) triggerSample(sample);
-            else stopActiveSample('EMPTY N'+note);
+            else stopActiveSample('EMPTY N'+data1);
         };
     });
     midiStatus.value = inputNames.length ? inputNames.join(', ') : 'NO MIDI INPUT';

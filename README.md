@@ -32,6 +32,18 @@ The initial bank is:
 MIDI Note On starts the mapped sample. MIDI Note Off is ignored. Triggering
 another sample immediately stops the current sample and starts the new one.
 The existing Loop button controls whether the active sample repeats.
+An unmapped note stops the active latch.
+
+## MIDI controls
+
+MIDI note 24 (C1) toggles Sweep mode. MIDI channel 1 controller assignments:
+
+| CC | Control |
+| ---: | --- |
+| 20 | Persistence |
+| 21 | Contrast |
+| 22 | Black Point |
+| 23 | Core/Halo balance |
 
 Press `CONNECT` in the MIDI Bank section to grant Chromium access to a connected
 MIDI keyboard. Computer keys `1`, `2`, and `3` work without MIDI hardware.

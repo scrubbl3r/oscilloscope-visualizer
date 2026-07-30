@@ -932,7 +932,7 @@ var Render =
 	}
 }
 
-var sweepPosition = -1;
+var sweepPosition = -1.0;
 var belowTrigger = false;
 
 function doScriptProcessor(event)
@@ -958,8 +958,8 @@ function doScriptProcessor(event)
         {
             xSamples[i] = sweepPosition / gain;
             sweepPosition += 2*AudioSystem.timePerSample/sweepMinTime;
-            if (sweepPosition > 1.1 && belowTrigger && ySamples[i]>=triggerValue)
-                sweepPosition =-1.3;
+            if (sweepPosition > 1.0 && belowTrigger && ySamples[i]>=triggerValue)
+                sweepPosition = -1.0;
             belowTrigger = ySamples[i]<triggerValue;
         }
     }
