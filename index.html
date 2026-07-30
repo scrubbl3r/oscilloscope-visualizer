@@ -343,7 +343,7 @@ output {
 
 #samplePads {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
 }
 
 .samplePad {
@@ -1033,7 +1033,7 @@ var renderSampleBank = function(bank)
         pad.addEventListener('click', function() { triggerSample(sample); });
         samplePads.appendChild(pad);
     });
-    midiStatus.value = bank.name+' · KEYS 1–2';
+    midiStatus.value = bank.name+' · KEYS '+sampleBank.map(function(sample) { return sample.key; }).join('·');
 };
 
 fetch('sample-bank.json', {cache: 'no-store'})

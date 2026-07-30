@@ -25,12 +25,13 @@ The initial bank is:
 
 | Computer key | MIDI note | Sample |
 | --- | ---: | --- |
-| `1` | 36 | `036-tower-01-stems.wav` |
-| `2` | 38 | `038-mirror-mask-01.wav` |
+| `1` | 12 (C0) | `012-C0-tower-01-stems.wav` |
+| `2` | 14 (D0) | `014-D0-mirror-mask-01.wav` |
+| `3` | 16 (E0) | `016-E0-tower-02.wav` |
 
 MIDI Note On starts the mapped sample. MIDI Note Off is ignored. Triggering
 another sample immediately stops the current sample and starts the new one.
 The existing Loop button controls whether the active sample repeats.
 
 Press `CONNECT` in the MIDI Bank section to grant Chromium access to a connected
-MIDI keyboard. Computer keys `1` and `2` work without MIDI hardware.
+MIDI keyboard. Computer keys `1`, `2`, and `3` work without MIDI hardware.

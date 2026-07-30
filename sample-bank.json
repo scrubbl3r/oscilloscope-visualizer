@@ -2,16 +2,22 @@
   "name": "LOCAL BANK 01",
   "samples": [
     {
-      "note": 36,
+      "note": 12,
       "key": "1",
       "name": "TOWER 01 STEMS",
-      "file": "samples/036-tower-01-stems.wav"
+      "file": "samples/012-C0-tower-01-stems.wav"
     },
     {
-      "note": 38,
+      "note": 14,
       "key": "2",
       "name": "MIRROR MASK 01",
-      "file": "samples/038-mirror-mask-01.wav"
+      "file": "samples/014-D0-mirror-mask-01.wav"
+    },
+    {
+      "note": 16,
+      "key": "3",
+      "name": "TOWER 02",
+      "file": "samples/016-E0-tower-02.wav"
     }
   ]
 }
