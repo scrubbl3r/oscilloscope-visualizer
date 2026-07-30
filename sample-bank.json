@@ -1,0 +1,17 @@
+{
+  "name": "LOCAL BANK 01",
+  "samples": [
+    {
+      "note": 36,
+      "key": "1",
+      "name": "TOWER 01 STEMS",
+      "file": "samples/036-tower-01-stems.wav"
+    },
+    {
+      "note": 38,
+      "key": "2",
+      "name": "MIRROR MASK 01",
+      "file": "samples/038-mirror-mask-01.wav"
+    }
+  ]
+}

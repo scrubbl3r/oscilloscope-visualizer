@@ -296,6 +296,93 @@ output {
   background: var(--hot-orange);
 }
 
+#midiBankSection {
+  display: grid;
+  gap: 3px;
+}
+
+#midiBankHeader,
+#samplePads {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+#midiBankHeader b {
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+#midiStatus {
+  min-width: 0;
+  margin-left: auto;
+  overflow: hidden;
+  color: var(--text-dim);
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#midiConnect,
+.samplePad {
+  min-height: 20px;
+  padding: 2px 6px;
+  border: 0;
+  color: var(--hot-orange);
+  background: #000;
+  clip-path: polygon(3px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 3px);
+  cursor: pointer;
+}
+
+#midiConnect {
+  color: #000;
+  background: var(--hot-orange);
+  font-size: 9px;
+  font-weight: 800;
+}
+
+#samplePads {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.samplePad {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) 24px;
+  gap: 4px;
+  align-items: center;
+  text-align: left;
+}
+
+.samplePad kbd {
+  color: var(--toxic-yellow);
+  font: 700 10px/1 inherit;
+}
+
+.samplePad span {
+  overflow: hidden;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.samplePad small {
+  color: var(--text-dim);
+  font-size: 8px;
+  text-align: right;
+}
+
+.samplePad:hover,
+.samplePad.active {
+  color: #000;
+  background: var(--hot-orange);
+}
+
+.samplePad.active kbd,
+.samplePad.active small {
+  color: #000;
+}
+
 b {
   font-weight: 700;
   letter-spacing: 0.055em;
@@ -812,6 +899,17 @@ or <a href="https://github.com/mattingalls/Soundflower">Soundflower</a> with
 <button id="audioStop" class="transportButton" type="button" aria-label="Stop">■</button>
 </div>
 
+<hr noshade>
+
+<section id="midiBankSection" aria-label="MIDI sample bank">
+<div id="midiBankHeader">
+<b>MIDI BANK</b>
+<button id="midiConnect" type="button">CONNECT</button>
+<output id="midiStatus">LOADING BANK</output>
+</div>
+<div id="samplePads"></div>
+</section>
+
 <script>
 var file;
 var audioFileInput = document.getElementById('audioFile');
@@ -825,6 +923,11 @@ var audioCurrentTime = document.getElementById('audioCurrentTime');
 var audioDuration = document.getElementById('audioDuration');
 var startMessage = document.getElementById('clicktostart');
 var startupAudioPickerArmed = true;
+var sampleBank = [];
+var sampleByNote = {};
+var sampleByKey = {};
+var activeSampleNote = null;
+var midiAccess = null;
 
 var selectMicrophoneSource = function(enabled)
 {
@@ -871,6 +974,7 @@ var loadAudioFile = function(audioFileToLoad)
     if (file) URL.revokeObjectURL(file)
     file = URL.createObjectURL(audioFileToLoad);
     audioElementControl.src = file;
+    setActiveSample(null);
     audioElementControl.loop = true;
     audioLoop.setAttribute('aria-pressed', 'true');
     AudioSystem.resumeFilePlayback(audioElementControl);
@@ -879,9 +983,120 @@ var loadAudioFile = function(audioFileToLoad)
     document.removeEventListener('click', openStartupAudioPicker, true);
 };
 
+var setActiveSample = function(note)
+{
+    activeSampleNote = note;
+    document.querySelectorAll('.samplePad').forEach(function(pad)
+    {
+        pad.classList.toggle('active', Number(pad.dataset.sampleNote) === note);
+    });
+};
+
+var triggerSample = function(sample)
+{
+    if (!sample) return;
+    if (window.activateApp) activateApp();
+    micCheckbox.checked = false;
+    AudioSystem.disconnectMicrophone();
+    startupAudioPickerArmed = false;
+    document.removeEventListener('click', openStartupAudioPicker, true);
+    if (startMessage) startMessage.remove();
+    if (file)
+    {
+        URL.revokeObjectURL(file);
+        file = null;
+    }
+    audioElementControl.pause();
+    audioElementControl.src = sample.file;
+    audioElementControl.currentTime = 0;
+    setActiveSample(sample.note);
+    midiStatus.value = 'PLAYING '+sample.name;
+    AudioSystem.resumeFilePlayback(audioElementControl);
+};
+
+var renderSampleBank = function(bank)
+{
+    sampleBank = bank.samples || [];
+    sampleByNote = {};
+    sampleByKey = {};
+    samplePads.replaceChildren();
+    sampleBank.forEach(function(sample)
+    {
+        sampleByNote[sample.note] = sample;
+        sampleByKey[sample.key] = sample;
+        var pad = document.createElement('button');
+        pad.type = 'button';
+        pad.className = 'samplePad';
+        pad.dataset.sampleNote = sample.note;
+        pad.title = 'Trigger '+sample.name;
+        pad.innerHTML = '<kbd>'+sample.key+'</kbd><span>'+sample.name+'</span><small>N'+sample.note+'</small>';
+        pad.addEventListener('click', function() { triggerSample(sample); });
+        samplePads.appendChild(pad);
+    });
+    midiStatus.value = bank.name+' · KEYS 1–2';
+};
+
+fetch('sample-bank.json', {cache: 'no-store'})
+    .then(function(response)
+    {
+        if (!response.ok) throw new Error('bank unavailable');
+        return response.json();
+    })
+    .then(renderSampleBank)
+    .catch(function() { midiStatus.value = 'BANK UNAVAILABLE'; });
+
+var bindMidiInputs = function()
+{
+    if (!midiAccess) return;
+    var inputNames = [];
+    midiAccess.inputs.forEach(function(input)
+    {
+        inputNames.push(input.name || 'MIDI INPUT');
+        input.onmidimessage = function(event)
+        {
+            var command = event.data[0] & 0xf0;
+            var note = event.data[1];
+            var velocity = event.data[2];
+            if (command === 0x90 && velocity > 0) triggerSample(sampleByNote[note]);
+        };
+    });
+    midiStatus.value = inputNames.length ? inputNames.join(', ') : 'NO MIDI INPUT';
+};
+
+var connectMidi = function()
+{
+    if (!navigator.requestMIDIAccess)
+    {
+        midiStatus.value = 'WEB MIDI UNAVAILABLE';
+        return;
+    }
+    if (window.activateApp) activateApp();
+    midiStatus.value = 'CONNECTING';
+    navigator.requestMIDIAccess().then(function(access)
+    {
+        midiAccess = access;
+        midiAccess.onstatechange = bindMidiInputs;
+        bindMidiInputs();
+    }).catch(function() { midiStatus.value = 'MIDI ACCESS DENIED'; });
+};
+
+midiConnect.addEventListener('click', connectMidi);
+
+document.addEventListener('keydown', function(event)
+{
+    var target = event.target;
+    var isEditing = target.matches('input, textarea, select') || target.isContentEditable;
+    if (isEditing || event.repeat || event.ctrlKey || event.metaKey || event.altKey) return;
+    var sample = sampleByKey[event.key];
+    if (!sample) return;
+    event.preventDefault();
+    triggerSample(sample);
+});
+
 var openStartupAudioPicker = function(event)
 {
     if (!startupAudioPickerArmed || event.detail === 0 || event.target === audioFileInput) return;
+    if (event.target.closest('#midiBankSection')) return;
     if (micCheckbox.checked)
     {
         if (event.target === micCheckbox) return;
@@ -915,6 +1130,8 @@ audioStop.addEventListener('click', function()
 {
     audioElementControl.pause();
     audioElementControl.currentTime = 0;
+    setActiveSample(null);
+    midiStatus.value = 'STOPPED';
     syncAudioTransport();
 });
 
@@ -935,7 +1152,12 @@ audioElementControl.addEventListener('durationchange', syncAudioTransport);
 audioElementControl.addEventListener('timeupdate', syncAudioTransport);
 audioElementControl.addEventListener('play', syncAudioTransport);
 audioElementControl.addEventListener('pause', syncAudioTransport);
-audioElementControl.addEventListener('ended', syncAudioTransport);
+audioElementControl.addEventListener('ended', function()
+{
+    setActiveSample(null);
+    midiStatus.value = 'READY';
+    syncAudioTransport();
+});
 syncAudioTransport();
 </script>
 
