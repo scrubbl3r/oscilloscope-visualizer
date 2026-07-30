@@ -992,6 +992,15 @@ var setActiveSample = function(note)
     });
 };
 
+var stopActiveSample = function(status)
+{
+    audioElementControl.pause();
+    audioElementControl.currentTime = 0;
+    setActiveSample(null);
+    midiStatus.value = status || 'STOPPED';
+    syncAudioTransport();
+};
+
 var triggerSample = function(sample)
 {
     if (!sample) return;
@@ -1057,7 +1066,10 @@ var bindMidiInputs = function()
             var command = event.data[0] & 0xf0;
             var note = event.data[1];
             var velocity = event.data[2];
-            if (command === 0x90 && velocity > 0) triggerSample(sampleByNote[note]);
+            if (command !== 0x90 || velocity === 0) return;
+            var sample = sampleByNote[note];
+            if (sample) triggerSample(sample);
+            else stopActiveSample('EMPTY N'+note);
         };
     });
     midiStatus.value = inputNames.length ? inputNames.join(', ') : 'NO MIDI INPUT';
@@ -1088,7 +1100,11 @@ document.addEventListener('keydown', function(event)
     var isEditing = target.matches('input, textarea, select') || target.isContentEditable;
     if (isEditing || event.repeat || event.ctrlKey || event.metaKey || event.altKey) return;
     var sample = sampleByKey[event.key];
-    if (!sample) return;
+    if (!sample)
+    {
+        if (/^Digit[0-9]$/.test(event.code)) stopActiveSample('EMPTY KEY '+event.key);
+        return;
+    }
     event.preventDefault();
     triggerSample(sample);
 });
@@ -1128,11 +1144,7 @@ audioPlayPause.addEventListener('click', function()
 
 audioStop.addEventListener('click', function()
 {
-    audioElementControl.pause();
-    audioElementControl.currentTime = 0;
-    setActiveSample(null);
-    midiStatus.value = 'STOPPED';
-    syncAudioTransport();
+    stopActiveSample('STOPPED');
 });
 
 audioLoop.addEventListener('click', function()
