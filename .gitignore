@@ -1,3 +1,4 @@
 # Local sample library. Audio files remain on the sampler device and are never committed.
-/samples/
+/samples/*
+!/samples/README.md
 .DS_Store
