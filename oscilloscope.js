@@ -367,6 +367,7 @@ var Render =
 		this.outputShader.uTexture1 = gl.getUniformLocation(this.outputShader, "uTexture1");
 		this.outputShader.uTexture2 = gl.getUniformLocation(this.outputShader, "uTexture2");
 		this.outputShader.uTexture3 = gl.getUniformLocation(this.outputShader, "uTexture3");
+		this.outputShader.uTexture4 = gl.getUniformLocation(this.outputShader, "uTexture4");
 		this.outputShader.uExposure = gl.getUniformLocation(this.outputShader, "uExposure");
 		this.outputShader.uCoreColour = gl.getUniformLocation(this.outputShader, "uCoreColour");
 		this.outputShader.uHaloColour = gl.getUniformLocation(this.outputShader, "uHaloColour");
@@ -433,6 +434,7 @@ var Render =
 		this.blur2Texture = this.makeTexture(256, 256);
 		this.blur3Texture = this.makeTexture(32, 32);
 		this.blur4Texture = this.makeTexture(32, 32);
+		this.graticuleTexture = this.makeTexture(1024, 1024);
 		this.onResize();
 		this.screenTexture = this.loadTexture('noise.jpg');
 	},
@@ -482,6 +484,8 @@ var Render =
 		this.resizeTexture(this.blur2Texture, tightGlowSize[0], tightGlowSize[1]);
 		this.resizeTexture(this.blur3Texture, wideGlowSize[0], wideGlowSize[1]);
 		this.resizeTexture(this.blur4Texture, wideGlowSize[0], wideGlowSize[1]);
+		this.resizeTexture(this.graticuleTexture, lineSize[0], lineSize[1]);
+		this.drawGrid();
 	},
 
 	drawLineTexture : function(xPoints, yPoints)
@@ -542,7 +546,7 @@ var Render =
 		gl.uniform1f(this.outputShader.uEmissionRamp, controls.emissionRamp);
 		gl.uniform1f(this.outputShader.uContrast, controls.contrast);
 		gl.uniform1f(this.outputShader.uBlackPoint, controls.blackPoint);
-		this.drawTexture(this.lineTexture, this.blur1Texture, this.blur3Texture, this.screenTexture);
+		this.drawTexture(this.lineTexture, this.blur1Texture, this.blur3Texture, this.screenTexture, this.graticuleTexture);
 	},
 
 	getColourFromHex : function(hexColour)
@@ -577,7 +581,7 @@ var Render =
 		gl.useProgram(program);
 	},
 
-	drawTexture : function(texture0, texture1, texture2, texture3)
+	drawTexture : function(texture0, texture1, texture2, texture3, texture4)
 	{
 		//gl.useProgram(this.program);
 		gl.enableVertexAttribArray(this.program.aPos);
@@ -605,6 +609,13 @@ var Render =
 			gl.activeTexture(gl.TEXTURE3);
 			gl.bindTexture(gl.TEXTURE_2D, texture3);
 			gl.uniform1i(this.program.uTexture3, 3);
+		}
+
+		if (texture4)
+		{
+			gl.activeTexture(gl.TEXTURE4);
+			gl.bindTexture(gl.TEXTURE_2D, texture4);
+			gl.uniform1i(this.program.uTexture4, 4);
 		}
 
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
@@ -724,72 +735,75 @@ var Render =
 			gl.generateMipmap(gl.TEXTURE_2D);
 			//hardcoded:
 			texture.width = texture.height = 512;
-			if (controls.grid) Render.drawGrid(texture);
 		});
 		return texture;
 	},
 
-	drawGrid : function(texture)
+	drawGrid : function()
 	{
-		this.activateTargetTexture(texture);
+		if (!this.graticuleTexture) return;
+		this.activateTargetTexture(this.graticuleTexture);
+		gl.clearColor(0.0, 0.0, 0.0, 1.0);
+		gl.clear(gl.COLOR_BUFFER_BIT);
+		if (!controls.grid) return;
 		this.setNormalBlending();
 		this.setShader(this.simpleShader);
-		gl.colorMask(true, false, false, true);
 
-		var data = [];
+		var verticalDivisions = 8;
+		var aspect = this.canvas.width/Math.max(1, this.canvas.height);
+		var horizontalDivisions = Math.max(2, Math.round(verticalDivisions*aspect));
+		var regular = [];
+		var centre = [];
+		var ticks = [];
+		var xStep = 2/horizontalDivisions;
+		var yStep = 2/verticalDivisions;
+		var tickX = 10/Math.max(1, this.canvas.width);
+		var tickY = 10/Math.max(1, this.canvas.height);
 
-		for (var i=0; i<11; i++)
+		for (var xIndex=0; xIndex<=horizontalDivisions; xIndex++)
 		{
-			var step = 45;
-			var s = i*step;
-			data.splice(0,0, 0, s, 10*step, s);
-			data.splice(0,0, s, 0, s, 10*step);
-			if (i!=0 && i!=10)
+			var x = -1+xIndex*xStep;
+			var xTarget = (horizontalDivisions%2===0 && xIndex===horizontalDivisions/2) ? centre : regular;
+			xTarget.push(x, -1, x, 1);
+			for (var yTick=1; yTick<verticalDivisions*5; yTick++)
 			{
-				for (var j=0; j<51; j++)
-				{
-					t = j*step/5;
-					if (i!=5)
-					{
-						data.splice(0,0, t, s-2, t, s+1);
-						data.splice(0,0, s-2, t, s+1, t);
-					}
-					else
-					{
-						data.splice(0,0, t, s-5, t, s+4);
-						data.splice(0,0, s-5, t, s+4, t);
-					}
-				}
+				if (yTick%5===0) continue;
+				var ty = -1+yTick*yStep/5;
+				ticks.push(x-tickX, ty, x+tickX, ty);
 			}
 		}
 
-		for (var j=0; j<51; j++)
+		for (var yIndex=0; yIndex<=verticalDivisions; yIndex++)
 		{
-			var t = j*step/5;
-			if (t%5 == 0) continue;
-			data.splice(0,0, t-2, 2.5*step, t+2, 2.5*step);
-			data.splice(0,0, t-2, 7.5*step, t+2, 7.5*step);
+			var y = -1+yIndex*yStep;
+			var yTarget = (yIndex===verticalDivisions/2) ? centre : regular;
+			yTarget.push(-1, y, 1, y);
+			for (var xTick=1; xTick<horizontalDivisions*5; xTick++)
+			{
+				if (xTick%5===0) continue;
+				var tx = -1+xTick*xStep/5;
+				ticks.push(tx, y-tickY, tx, y+tickY);
+			}
 		}
 
-
-		var vertices = new Float32Array(data);
-		for (var i=0; i<data.length; i++)
+		var drawSegments = function(data, intensity)
 		{
-			vertices[i]=(vertices[i]+31)/256-1;
-		}
+			if (!data.length) return;
+			var vertices = new Float32Array(data);
+			gl.enableVertexAttribArray(Render.program.vertexPosition);
+			gl.bindBuffer(gl.ARRAY_BUFFER, Render.vertexBuffer);
+			gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+			gl.vertexAttribPointer(Render.program.vertexPosition, 2, gl.FLOAT, false, 0, 0);
+			gl.bindBuffer(gl.ARRAY_BUFFER, null);
+			gl.uniform4fv(Render.program.colour, [intensity, 0.0, 0.0, 1.0]);
+			gl.lineWidth(1.0);
+			gl.drawArrays(gl.LINES, 0, vertices.length/2);
+			gl.disableVertexAttribArray(Render.program.vertexPosition);
+		};
 
-
-		gl.enableVertexAttribArray(this.program.vertexPosition);
-		gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
-   		gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
-		gl.vertexAttribPointer(this.program.vertexPosition, 2, gl.FLOAT, false, 0, 0);
-		gl.bindBuffer(gl.ARRAY_BUFFER, null);
-		gl.uniform4fv(this.program.colour, [0.01, 0.1, 0.01, 1.0]);
-
-		gl.lineWidth(1.0);
-		gl.drawArrays(gl.LINES, 0, vertices.length/2);
-
-		gl.colorMask(true, true, true, true);
+		drawSegments(regular, 0.20);
+		drawSegments(ticks, 0.24);
+		drawSegments(centre, 0.36);
 	},
 
 	makeTexture : function(width, height)
