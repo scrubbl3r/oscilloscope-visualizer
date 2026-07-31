@@ -1210,7 +1210,7 @@ var bindMidiInputs = function()
             if (command !== 0x90 || data2 === 0) return;
             if (data1 >= 24 && data1 <= 35)
             {
-                if (data1 === 24) toggleSweepMode();
+                if (data1 === 35) toggleSweepMode();
                 else recallEmissionPreset(data1-24);
                 return;
             }
@@ -1251,7 +1251,7 @@ document.addEventListener('keydown', function(event)
     event.preventDefault();
     if (event.shiftKey)
     {
-        if (keyIndex === 0) toggleSweepMode();
+        if (keyIndex === 11) toggleSweepMode();
         else recallEmissionPreset(keyIndex);
         return;
     }
@@ -1426,7 +1426,7 @@ try
     var storedEmissionPresets = JSON.parse(localStorage.getItem(emissionPresetStorageKey));
     if (Array.isArray(storedEmissionPresets))
     {
-        for (var presetIndex=1; presetIndex<12; presetIndex++)
+        for (var presetIndex=0; presetIndex<11; presetIndex++)
             emissionPresets[presetIndex] = storedEmissionPresets[presetIndex] || null;
     }
 }
@@ -1468,7 +1468,7 @@ var updatePresetSquares = function()
     document.querySelectorAll('.presetSquare').forEach(function(square)
     {
         var index = Number(square.dataset.presetIndex);
-        if (index === 0)
+        if (index === 11)
         {
             square.classList.toggle('active', controls.sweepOn);
             return;
@@ -1489,7 +1489,7 @@ var saveEmissionPresets = function()
 
 var captureActivePreset = function()
 {
-    if (!presetEditorOpen || selectedPresetIndex === null || selectedPresetIndex === 0 || applyingEmissionPreset) return;
+    if (!presetEditorOpen || selectedPresetIndex === null || selectedPresetIndex === 11 || applyingEmissionPreset) return;
     emissionPresetDrafts[selectedPresetIndex] = getEmissionSnapshot();
     updatePresetSquares();
     midiStatus.value = 'CAPTURING '+emissionPresetNames[selectedPresetIndex];
@@ -1497,7 +1497,7 @@ var captureActivePreset = function()
 
 var selectEmissionPreset = function(index)
 {
-    if (!presetEditorOpen || index === 0) return;
+    if (!presetEditorOpen || index === 11) return;
     selectedPresetIndex = index;
     var preset = emissionPresetDrafts[index] || startupEmissionPreset;
     applyingEmissionPreset = true;
@@ -1559,12 +1559,12 @@ emissionPresetNames.forEach(function(name, index)
 {
     var square = document.createElement('button');
     square.type = 'button';
-    square.className = 'presetSquare'+(index === 0 ? ' reserved' : '');
+    square.className = 'presetSquare'+(index === 11 ? ' reserved' : '');
     square.dataset.presetIndex = index;
     square.textContent = name.replace('1', '');
-    square.title = index === 0 ? 'C1 reserved for Sweep toggle' : name+' — click to capture current emission';
+    square.title = index === 11 ? 'B1 reserved for Sweep toggle' : name+' — click to capture current emission';
     square.setAttribute('aria-label', square.title);
-    if (index === 0)
+    if (index === 11)
     {
         square.disabled = true;
         square.setAttribute('aria-disabled', 'true');

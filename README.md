@@ -50,18 +50,18 @@ The physical number row maps chromatically: `1 2 3 4 5 6 7 8 9 0 - =`
 corresponds to C0 through B0. Unmapped notes and number-row keys stop the active
 sample latch.
 
-Shift plus the same twelve physical keys maps to C1 through B1. C1 is reserved
-for Sweep. C♯1 through B1 recall eleven locally stored emission presets.
+Shift plus the same twelve physical keys maps to C1 through B1. B1 is reserved
+for Sweep. C1 through A♯1 recall eleven locally stored emission presets.
 
-The PRESETS button opens a floating capture editor. Selecting C♯1 through B1
+The PRESETS button opens a floating capture editor. Selecting C1 through A♯1
 loads that slot's locked settings, or the startup defaults for an empty slot.
 While the editor is open, changes to Background, Core, Halo, Persistence,
 Contrast, and Black Point update only the selected draft. Switching squares
 preserves each draft independently. Closing the editor commits and locks every
-draft in browser `localStorage`. The C1 square is non-interactive and shows the
+draft in browser `localStorage`. The B1 square is non-interactive and shows the
 Sweep state.
 
-MIDI note 24 (C1) toggles Sweep mode. MIDI channel 1 controller assignments:
+MIDI note 35 (B1) toggles Sweep mode. MIDI channel 1 controller assignments:
 
 | CC | Control |
 | ---: | --- |
