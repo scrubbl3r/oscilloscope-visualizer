@@ -34,6 +34,16 @@ another sample immediately stops the current sample and starts the new one.
 The existing Loop button controls whether the active sample repeats.
 An unmapped note stops the active latch.
 
+## Local settings
+
+Interface settings are automatically stored as a small versioned JSON object in
+browser `localStorage` and restored on reload. This includes display, sweep,
+generator, emission, microphone selection, audio volume, and Loop state. A URL
+settings hash takes precedence and becomes the new locally saved state.
+
+`reset all` clears the saved interface settings without deleting emission
+presets or sample-bank files.
+
 ## MIDI controls
 
 The physical number row maps chromatically: `1 2 3 4 5 6 7 8 9 0 - =`

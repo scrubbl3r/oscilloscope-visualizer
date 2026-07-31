@@ -1007,6 +1007,7 @@ var xSamples = new Float32Array(1024);
 var ySamples = new Float32Array(1024);
 UI.init();
 Render.init();
+Controls.setupControls();
 
 var appActivated = false;
 
@@ -1030,7 +1031,6 @@ var activateApp = function(event)
 		if (startMessage) startMessage.remove();
 	}
 	requestAnimationFrame(drawCRTFrame);
-	Controls.setupControls();
 };
 
 document.addEventListener("pointerdown", activateApp, true);

@@ -1122,6 +1122,7 @@ var toggleSweepMode = function()
     controls.sweepOn = sweepCheckbox.checked;
     if (controls.sweepOn && typeof sweepPosition !== 'undefined') sweepPosition = -1.0;
     if (typeof updatePresetSquares === 'function') updatePresetSquares();
+    if (window.Controls) Controls.queueLocalSettingsSave();
     midiStatus.value = 'SWEEP '+(controls.sweepOn ? 'ON' : 'OFF');
 };
 
@@ -1396,7 +1397,7 @@ oninput="controls.persistence=this.value; persistenceOutput.value=parseFloat(thi
 <label><input id="freeze" type="checkbox" onchange="controls.freezeImage=this.checked"> FREEZE</label>
 <label><input id="disableFilter" type="checkbox" onchange="controls.disableFilter=this.checked"> DISABLE UPSAMPLING</label>
 <label><input id="hideGrid" type="checkbox"
-onchange="controls.grid=!controls.grid; if (Render) Render.screenTexture = Render.loadTexture('noise.jpg');"> HIDE GRATICULE</label>
+onchange="controls.grid=!this.checked; if (Render) Render.screenTexture = Render.loadTexture('noise.jpg');"> HIDE GRATICULE</label>
 </div>
 </div>
 
@@ -1607,7 +1608,7 @@ updatePresetSquares();
 
 <input id="urlText" type="text" size="28" style="margin-top:5px" onclick="Controls.generateUrl()"
 value=" export current settings as a URL">
-&nbsp<a href="javascript:restoreDefaults();">[reset all]</a>
+&nbsp<a href="javascript:Controls.restoreDefaults();">[reset all]</a>
 
 <script>
 
@@ -1619,6 +1620,11 @@ var updateEmissionRamp = function()
 updateEmissionRamp();
 
 var Controls = {
+    localSettingsKey : 'oscilloscope-settings-v1',
+    settingsRestored : false,
+    applyingSettings : false,
+    saveTimer : null,
+
     generateUrl : function()
     {
         var locationString = location.toString();
@@ -1665,13 +1671,67 @@ var Controls = {
       return a;
     },
 
+    getLocalSettingsObject : function()
+    {
+        return {
+            version: 1,
+            controls: this.getControlsArray(),
+            audioVolume: audioVolume.value,
+            microphone: micCheckbox.checked,
+            loop: audioElementControl.loop
+        };
+    },
+
+    saveLocalSettings : function()
+    {
+        if (this.applyingSettings) return;
+        try
+        {
+            localStorage.setItem(this.localSettingsKey, JSON.stringify(this.getLocalSettingsObject()));
+        }
+        catch (error) {}
+    },
+
+    queueLocalSettingsSave : function()
+    {
+        if (this.applyingSettings) return;
+        clearTimeout(this.saveTimer);
+        this.saveTimer = setTimeout(function() { Controls.saveLocalSettings(); }, 80);
+    },
+
+    getStoredLocalSettings : function()
+    {
+        try
+        {
+            var settings = JSON.parse(localStorage.getItem(this.localSettingsKey));
+            if (settings && settings.version === 1 && Array.isArray(settings.controls)) return settings;
+        }
+        catch (error) {}
+        return null;
+    },
+
     setupControls : function()
     {
+        if (this.settingsRestored) return;
         var locationString = location.toString();
-        if (!(locationString.includes('#'))) return;
-        var hash = locationString.split('#')[1];
-        var arrayString = decodeURI(hash);
-        var a = arrayString.split(',');
+        var hasUrlSettings = locationString.includes('#');
+        var localSettings = hasUrlSettings ? null : this.getStoredLocalSettings();
+        var a;
+        if (hasUrlSettings)
+        {
+            var hash = locationString.split('#')[1];
+            a = decodeURI(hash).split(',');
+        }
+        else if (localSettings)
+        {
+            a = localSettings.controls.slice();
+        }
+        else
+        {
+            this.settingsRestored = true;
+            return;
+        }
+        this.applyingSettings = true;
         var settingsLength = a.length;
         var legacyHueSettings = a.length === 18;
         var hasEmissionRamp = a.length >= 20;
@@ -1680,8 +1740,7 @@ var Controls = {
         var hasBlackPoint = settingsLength >= 25;
         this.setupSlider(mainGain, a.shift());
         this.setupSlider(exposure, a.shift());
-        //this.setupSlider(audioVolume, a.shift());
-        this.setupSlider(audioVolume, "0");
+        this.setupSlider(audioVolume, localSettings ? localSettings.audioVolume : "0");
         this.setupCheckbox(swapXY, a.shift());
         this.setupCheckbox(invertXY, a.shift());
         this.setupCheckbox(sweepCheckbox, a.shift());
@@ -1719,7 +1778,16 @@ var Controls = {
             this.setupSlider(contrast, a.shift());
         }
         if (hasBlackPoint) this.setupSlider(blackPoint, a.shift());
+        if (localSettings)
+        {
+            micCheckbox.checked = !!localSettings.microphone;
+            audioElementControl.loop = !!localSettings.loop;
+            audioLoop.setAttribute('aria-pressed', audioElementControl.loop ? 'true' : 'false');
+        }
         UI.compile();
+        this.applyingSettings = false;
+        this.settingsRestored = true;
+        if (hasUrlSettings) this.saveLocalSettings();
     },
 
     encodeString : function(s)
@@ -1760,11 +1828,16 @@ var Controls = {
 
     restoreDefaults : function()
     {
+        localStorage.removeItem(this.localSettingsKey);
         var locationString = location.toString();
         var site = locationString.split('#')[0];
         location = site;
     }
 }
+
+document.addEventListener('input', function() { Controls.queueLocalSettingsSave(); });
+document.addEventListener('change', function() { Controls.queueLocalSettingsSave(); });
+audioLoop.addEventListener('click', function() { Controls.queueLocalSettingsSave(); });
 
 </script>
 
