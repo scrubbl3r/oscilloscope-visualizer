@@ -2211,49 +2211,31 @@ appShell.addEventListener('click', function(event)
             float baselineLight = line.r + 1.5*screen.g*screen.g*tightGlow.r;
             baselineLight += 0.4*baselineScatter.g*(2.0+screen.g+0.5*screen.r);
 
-            vec2 edgeCoord = (vTexCoord-0.5)*2.0;
-            float radiusSquared = dot(edgeCoord, edgeCoord);
-            float bow = 1.0-0.004*radiusSquared;
-            vec2 bowedTexCoord = 0.5+0.5*edgeCoord*bow;
-            vec4 stabilityProbe = texture2D(uTexture0, bowedTexCoord);
+            vec4 stabilityProbe = texture2D(uTexture0, vTexCoord);
             float dwellProbe = smoothstep(0.10, 0.62, stabilityProbe.r);
             float instability = 1.0-0.70*dwellProbe;
             vec2 jitterWave = vec2(sin(uOpticalTime*1.13+0.4), sin(uOpticalTime*0.87+2.1));
-            vec2 beamTexCoord = bowedTexCoord+jitterWave*(0.35*instability)/max(uViewportSize, vec2(1.0));
+            vec2 beamTexCoord = vTexCoord+jitterWave*(0.35*instability)/max(uViewportSize, vec2(1.0));
             float scanNoise = 2.0*opticalNoise(vec2(uOpticalTime*7.0, 23.0))-1.0;
             float scanJitterPx = 1.25*scanNoise+0.18*sin(uOpticalTime*17.3);
             vec2 freshBeamTexCoord = beamTexCoord+vec2(uSweepOn*scanJitterPx/max(uViewportSize.x, 1.0), 0.0);
-            vec4 polishedLine = texture2D(uTexture0, beamTexCoord);
-            vec4 polishedTightGlow = texture2D(uTexture1, bowedTexCoord);
-            vec4 polishedWideGlow = texture2D(uTexture2, bowedTexCoord);
+            vec4 motionLineTexture = texture2D(uTexture0, beamTexCoord);
+            vec4 motionTightGlow = texture2D(uTexture1, beamTexCoord);
+            vec4 motionWideGlow = texture2D(uTexture2, beamTexCoord);
             vec4 freshReference = texture2D(uTexture5, beamTexCoord);
             vec4 freshLine = texture2D(uTexture5, freshBeamTexCoord);
 
-            float edgeAmount = smoothstep(0.55, 1.25, length(edgeCoord));
-            float freshEnergy = freshLine.r;
-            float historyEnergy = max(polishedLine.r-freshReference.r, 0.0);
-            float historyHalo = max(polishedTightGlow.r-0.35*freshEnergy, 0.0);
-            float focusBreath = 0.5+0.5*sin(uOpticalTime*0.43+1.7);
-            float focusMix = 0.05*edgeAmount+instability*(0.003+0.005*focusBreath);
-            float focusedFresh = mix(freshEnergy, polishedTightGlow.r, focusMix);
-            float agedHistory = 0.82*historyEnergy+0.18*historyHalo;
-            float dwell = smoothstep(0.08, 0.65, polishedLine.r+0.5*polishedTightGlow.r);
-            float phosphorNoise = mix(0.92, 1.08, screen.g);
-            float phosphorVariation = 1.0+(opticalNoise(bowedTexCoord*9.0+vec2(17.0, 3.0))-0.5)*0.025;
-            float wideEnergy = max(polishedWideGlow.r-0.022, 0.0);
-            float polishedLight = focusedFresh+agedHistory;
-            polishedLight += mix(0.18, 0.42, dwell)*phosphorNoise*polishedTightGlow.r;
-            polishedLight += mix(0.12, 1.60, dwell*dwell)*wideEnergy*(0.8+0.4*screen.g);
-            polishedLight *= phosphorVariation;
+            float motionLine = max(motionLineTexture.r-freshReference.r, 0.0)+freshLine.r;
+            vec4 motionScatter = motionWideGlow+0.35;
+            float motionLight = motionLine+1.5*screen.g*screen.g*motionTightGlow.r;
+            motionLight += 0.4*motionScatter.g*(2.0+screen.g+0.5*screen.r);
             float intensityDrift = 0.67*sin(uOpticalTime*0.73)+0.33*sin(uOpticalTime*0.21+2.4);
-            polishedLight *= 1.0+0.015*instability*intensityDrift;
+            motionLight *= 1.0+0.015*instability*intensityDrift;
             float tubeFlutter = 2.0*opticalNoise(vec2(uOpticalTime*3.5, 41.0))-1.0;
             float tubeRipple = sin(uOpticalTime*106.8141502);
-            polishedLight *= 1.0+0.035*tubeFlutter+0.010*tubeRipple;
-            float edgeFalloff = 1.0-0.13*smoothstep(0.55, 1.25, length(edgeCoord));
-            polishedLight *= edgeFalloff;
+            motionLight *= 1.0+0.035*tubeFlutter+0.010*tubeRipple;
 
-            float light = mix(baselineLight, polishedLight, uOpticalPolish);
+            float light = mix(baselineLight, motionLight, uOpticalPolish);
             float tlight = 1.0-pow(2.0, -uExposure*light);
             tlight = max(0.0, tlight-uBlackPoint)/max(0.001, 1.0-uBlackPoint);
             float tlight2 = tlight*tlight*tlight;
@@ -2262,11 +2244,8 @@ appShell.addEventListener('click', function(event)
             vec3 sceneColour = mix(uBackgroundColour, emissionColour, tlight);
             vec3 gridColour = vec3(0.28, 0.065, 0.025);
             vec3 gradedScene = uBackgroundColour+(sceneColour-uBackgroundColour)*uContrast;
-            vec4 polishedGraticule = texture2D(uTexture4, bowedTexCoord);
-            float graticuleLight = mix(graticule.r, polishedGraticule.r, uOpticalPolish);
-            float glassMottle = 1.0+(opticalNoise(vTexCoord*2.5+vec2(2.0, 11.0))-0.5)*0.012;
-            vec3 composedScene = gradedScene+gridColour*graticuleLight*uGraticuleIntensity;
-            gl_FragColor.rgb = clamp(composedScene*mix(1.0, glassMottle, uOpticalPolish), 0.0, 1.0);
+            vec3 composedScene = gradedScene+gridColour*graticule.r*uGraticuleIntensity;
+            gl_FragColor.rgb = clamp(composedScene, 0.0, 1.0);
             gl_FragColor.a= 1.0;
     }
 </script>
