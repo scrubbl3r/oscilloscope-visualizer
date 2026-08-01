@@ -793,6 +793,7 @@ var controls=
 	contrast : 1.0,
 	blackPoint : 0.04,
 	graticuleIntensity : 1.15,
+	opticalPolish : false,
 	aspectWidth : 9,
 	aspectHeight : 6,
 	freezeImage: false,
@@ -1868,6 +1869,18 @@ audioLoop.addEventListener('click', function() { Controls.queueLocalSettingsSave
 var fullScreenMode = false;
 var fullScreenClickTimes = [];
 
+document.addEventListener('keydown', function(event)
+{
+    var target = event.target;
+    var isEditing = target.matches('input, textarea, select') || target.isContentEditable;
+    if (isEditing || event.repeat || event.ctrlKey || event.metaKey || event.altKey) return;
+    if (event.key.toLowerCase() !== 'o') return;
+    event.preventDefault();
+    controls.opticalPolish = !controls.opticalPolish;
+    if (window.midiStatus)
+        midiStatus.value = controls.opticalPolish ? 'OPTICS B · CLEAN' : 'OPTICS A · ORIGINAL';
+});
+
 var toggleFullScreenMode = function()
 {
     fullScreenMode = !fullScreenMode;
@@ -2157,6 +2170,7 @@ appShell.addEventListener('click', function(event)
     uniform float uContrast;
     uniform float uBlackPoint;
     uniform float uGraticuleIntensity;
+    uniform float uOpticalPolish;
     varying vec2 vTexCoord;
     varying vec2 vScreenCoord;
     void main (void)
@@ -2166,9 +2180,21 @@ appShell.addEventListener('click', function(event)
             vec4 screen = texture2D(uTexture3, vScreenCoord);
             vec4 graticule = texture2D(uTexture4, vTexCoord);
             vec4 tightGlow = texture2D(uTexture1, vTexCoord);
-            vec4 scatter = texture2D(uTexture2, vTexCoord)+0.35;
-            float light = line.r + 1.5*screen.g*screen.g*tightGlow.r;
-            light += 0.4*scatter.g * (2.0+1.0*screen.g + 0.5*screen.r);
+            vec4 wideGlow = texture2D(uTexture2, vTexCoord);
+
+            vec4 baselineScatter = wideGlow+0.35;
+            float baselineLight = line.r + 1.5*screen.g*screen.g*tightGlow.r;
+            baselineLight += 0.4*baselineScatter.g*(2.0+screen.g+0.5*screen.r);
+
+            float phosphorNoise = mix(0.92, 1.08, screen.g);
+            float wideEnergy = max(wideGlow.r-0.025, 0.0);
+            float polishedLight = line.r + 1.1*phosphorNoise*tightGlow.r;
+            polishedLight += 0.7*wideEnergy*(0.8+0.4*screen.g);
+            vec2 edgeCoord = (vTexCoord-0.5)*2.0;
+            float edgeFalloff = 1.0-0.08*smoothstep(0.55, 1.25, length(edgeCoord));
+            polishedLight *= edgeFalloff;
+
+            float light = mix(baselineLight, polishedLight, uOpticalPolish);
             float tlight = 1.0-pow(2.0, -uExposure*light);
             tlight = max(0.0, tlight-uBlackPoint)/max(0.001, 1.0-uBlackPoint);
             float tlight2 = tlight*tlight*tlight;
