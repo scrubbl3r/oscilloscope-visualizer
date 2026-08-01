@@ -2240,13 +2240,16 @@ appShell.addEventListener('click', function(event)
             float dwell = smoothstep(0.08, 0.65, polishedLine.r+0.5*polishedTightGlow.r);
             float phosphorNoise = mix(0.92, 1.08, screen.g);
             float phosphorVariation = 1.0+(opticalNoise(bowedTexCoord*9.0+vec2(17.0, 3.0))-0.5)*0.025;
-            float wideEnergy = max(polishedWideGlow.r-0.024, 0.0);
+            float wideEnergy = max(polishedWideGlow.r-0.022, 0.0);
             float polishedLight = focusedFresh+agedHistory;
             polishedLight += mix(0.18, 0.42, dwell)*phosphorNoise*polishedTightGlow.r;
-            polishedLight += mix(0.10, 1.25, dwell*dwell)*wideEnergy*(0.8+0.4*screen.g);
+            polishedLight += mix(0.12, 1.60, dwell*dwell)*wideEnergy*(0.8+0.4*screen.g);
             polishedLight *= phosphorVariation;
             float intensityDrift = 0.67*sin(uOpticalTime*0.73)+0.33*sin(uOpticalTime*0.21+2.4);
             polishedLight *= 1.0+0.015*instability*intensityDrift;
+            float tubeFlutter = 2.0*opticalNoise(vec2(uOpticalTime*3.5, 41.0))-1.0;
+            float tubeRipple = sin(uOpticalTime*106.8141502);
+            polishedLight *= 1.0+0.035*tubeFlutter+0.010*tubeRipple;
             float edgeFalloff = 1.0-0.13*smoothstep(0.55, 1.25, length(edgeCoord));
             polishedLight *= edgeFalloff;
 
