@@ -360,6 +360,7 @@ var Render =
 		this.lineShader.uFadeAmount = gl.getUniformLocation(this.lineShader, "uFadeAmount");
 		this.lineShader.uScreen = gl.getUniformLocation(this.lineShader, "uScreen");
 		this.lineShader.uCanvasAspect = gl.getUniformLocation(this.lineShader, "uCanvasAspect");
+		this.lineShader.uSweepOn = gl.getUniformLocation(this.lineShader, "uSweepOn");
 
 		this.outputShader = this.createShader("outputVertex","outputFragment");
 		this.outputShader.aPos = gl.getAttribLocation(this.outputShader, "aPos");
@@ -692,6 +693,7 @@ var Render =
 		gl.uniform1f(program.uSize, 0.015);
 		gl.uniform1f(program.uGain, Math.pow(2.0,controls.mainGain)*450/512);
 		gl.uniform1f(program.uCanvasAspect, this.canvas.width/this.canvas.height);
+		gl.uniform1f(program.uSweepOn, controls.sweepOn ? 1.0 : 0.0);
 		if (controls.invertXY) gl.uniform1f(program.uInvert, -1.0);
 		else gl.uniform1f(program.uInvert, 1.0);
 		if (controls.disableFilter) gl.uniform1f(program.uIntensity, 0.005*(Filter.steps+1.5));

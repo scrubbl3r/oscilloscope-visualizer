@@ -1958,6 +1958,7 @@ appShell.addEventListener('click', function(event)
 	uniform float uIntensity;
 	uniform float uGain;
 	uniform float uCanvasAspect;
+	uniform float uSweepOn;
 	attribute vec2 aStart, aEnd;
 	attribute float aIdx;
 	varying vec4 uvl;
@@ -2006,6 +2007,8 @@ appShell.addEventListener('click', function(event)
 		uvl.y = side * vSize;
 
 		uvl.w = uIntensity*mix(1.0-uFadeAmount, 1.0, floor(aIdx / 4.0 + 0.5)/uNEdges);
+		float retrace = step(0.5, abs((aEnd.x-aStart.x)*uGain));
+		uvl.w *= 1.0-uSweepOn*retrace;
 
 		vec2 projection = vec2(1.0);
 		if (uCanvasAspect > 1.0)
