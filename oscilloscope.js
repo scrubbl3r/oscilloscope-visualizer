@@ -379,6 +379,8 @@ var Render =
 		this.outputShader.uBlackPoint = gl.getUniformLocation(this.outputShader, "uBlackPoint");
 		this.outputShader.uGraticuleIntensity = gl.getUniformLocation(this.outputShader, "uGraticuleIntensity");
 		this.outputShader.uOpticalPolish = gl.getUniformLocation(this.outputShader, "uOpticalPolish");
+		this.outputShader.uOpticalTime = gl.getUniformLocation(this.outputShader, "uOpticalTime");
+		this.outputShader.uViewportSize = gl.getUniformLocation(this.outputShader, "uViewportSize");
 		this.outputShader.uCanvasAspect = gl.getUniformLocation(this.outputShader, "uCanvasAspect");
 
 		this.texturedShader = this.createShader("texturedVertex","texturedFragment");
@@ -507,7 +509,7 @@ var Render =
 		this.drawLine(xPoints, yPoints);
 	},
 
-	drawCRT : function()
+	drawCRT : function(timeStamp)
 	{
 		this.setNormalBlending();
 
@@ -558,6 +560,8 @@ var Render =
 		gl.uniform1f(this.outputShader.uBlackPoint, controls.blackPoint);
 		gl.uniform1f(this.outputShader.uGraticuleIntensity, controls.graticuleIntensity);
 		gl.uniform1f(this.outputShader.uOpticalPolish, controls.opticalPolish ? 1.0 : 0.0);
+		gl.uniform1f(this.outputShader.uOpticalTime, (timeStamp || 0)*0.001);
+		gl.uniform2f(this.outputShader.uViewportSize, this.canvas.width, this.canvas.height);
 		this.drawTexture(this.lineTexture, this.blur1Texture, this.blur3Texture, this.screenTexture, this.graticuleTexture, this.freshLineTexture);
 	},
 
@@ -1033,7 +1037,7 @@ function doScriptProcessor(event)
 
 function drawCRTFrame(timeStamp)
 {
-	Render.drawCRT();
+	Render.drawCRT(timeStamp);
 	requestAnimationFrame(drawCRTFrame);
 }
 

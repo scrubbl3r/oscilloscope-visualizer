@@ -2175,6 +2175,8 @@ appShell.addEventListener('click', function(event)
     uniform float uBlackPoint;
     uniform float uGraticuleIntensity;
     uniform float uOpticalPolish;
+    uniform float uOpticalTime;
+    uniform vec2 uViewportSize;
     varying vec2 vTexCoord;
     varying vec2 vScreenCoord;
 
@@ -2212,16 +2214,23 @@ appShell.addEventListener('click', function(event)
             float radiusSquared = dot(edgeCoord, edgeCoord);
             float bow = 1.0-0.004*radiusSquared;
             vec2 bowedTexCoord = 0.5+0.5*edgeCoord*bow;
-            vec4 polishedLine = texture2D(uTexture0, bowedTexCoord);
+            vec4 stabilityProbe = texture2D(uTexture0, bowedTexCoord);
+            float dwellProbe = smoothstep(0.10, 0.62, stabilityProbe.r);
+            float instability = 1.0-0.70*dwellProbe;
+            vec2 jitterWave = vec2(sin(uOpticalTime*1.13+0.4), sin(uOpticalTime*0.87+2.1));
+            vec2 beamTexCoord = bowedTexCoord+jitterWave*(0.35*instability)/max(uViewportSize, vec2(1.0));
+            vec4 polishedLine = texture2D(uTexture0, beamTexCoord);
             vec4 polishedTightGlow = texture2D(uTexture1, bowedTexCoord);
             vec4 polishedWideGlow = texture2D(uTexture2, bowedTexCoord);
-            vec4 freshLine = texture2D(uTexture5, bowedTexCoord);
+            vec4 freshLine = texture2D(uTexture5, beamTexCoord);
 
             float edgeAmount = smoothstep(0.55, 1.25, length(edgeCoord));
             float freshEnergy = freshLine.r;
             float historyEnergy = max(polishedLine.r-freshEnergy, 0.0);
             float historyHalo = max(polishedTightGlow.r-0.35*freshEnergy, 0.0);
-            float focusedFresh = mix(freshEnergy, polishedTightGlow.r, 0.12*edgeAmount);
+            float focusBreath = 0.5+0.5*sin(uOpticalTime*0.43+1.7);
+            float focusMix = 0.12*edgeAmount+instability*(0.008+0.010*focusBreath);
+            float focusedFresh = mix(freshEnergy, polishedTightGlow.r, focusMix);
             float agedHistory = 0.72*historyEnergy+0.45*historyHalo;
             float dwell = smoothstep(0.08, 0.65, polishedLine.r+0.5*polishedTightGlow.r);
             float phosphorNoise = mix(0.92, 1.08, screen.g);
@@ -2231,6 +2240,8 @@ appShell.addEventListener('click', function(event)
             polishedLight += mix(0.62, 0.82, dwell)*phosphorNoise*polishedTightGlow.r;
             polishedLight += mix(0.45, 0.72, dwell)*wideEnergy*(0.8+0.4*screen.g);
             polishedLight *= phosphorVariation;
+            float intensityDrift = 0.67*sin(uOpticalTime*0.73)+0.33*sin(uOpticalTime*0.21+2.4);
+            polishedLight *= 1.0+0.015*instability*intensityDrift;
             float edgeFalloff = 1.0-0.08*smoothstep(0.55, 1.25, length(edgeCoord));
             polishedLight *= edgeFalloff;
 
