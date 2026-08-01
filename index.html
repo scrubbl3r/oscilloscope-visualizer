@@ -106,7 +106,8 @@ body {
 
 #persistenceControl,
 #contrastControl,
-#blackPointControl {
+#blackPointControl,
+#graticuleControl {
   display: grid;
   grid-template-columns: 78px minmax(90px, 1fr) 32px;
   gap: 5px;
@@ -115,7 +116,8 @@ body {
 
 #persistenceControl input,
 #contrastControl input,
-#blackPointControl input {
+#blackPointControl input,
+#graticuleControl input {
   width: 100%;
 }
 
@@ -790,6 +792,7 @@ var controls=
 	backgroundColor : "#000000",
 	contrast : 1.0,
 	blackPoint : 0.04,
+	graticuleIntensity : 1.15,
 	aspectWidth : 9,
 	aspectHeight : 6,
 	freezeImage: false,
@@ -1399,6 +1402,12 @@ oninput="controls.persistence=this.value; persistenceOutput.value=parseFloat(thi
 <label><input id="hideGrid" type="checkbox"
 onchange="controls.grid=!this.checked; if (Render) Render.drawGrid();"> HIDE GRATICULE</label>
 </div>
+<label id="graticuleControl">
+<span>GRATICULE</span>
+<input id="graticuleIntensity" type="range" min="0" max="4" value="1.15" step="0.01"
+oninput="controls.graticuleIntensity=this.value; graticuleIntensityOutput.value=Math.round(parseFloat(this.value)*100)+'%'">
+<output id="graticuleIntensityOutput">115%</output>
+</label>
 </div>
 
 <div id="presetPanel">
@@ -1668,6 +1677,7 @@ var Controls = {
       a.push(backgroundColor.value.substring(1));
       a.push(contrast.value);
       a.push(blackPoint.value);
+      a.push(graticuleIntensity.value);
       return a;
     },
 
@@ -1738,6 +1748,7 @@ var Controls = {
         var hasAspectRatio = settingsLength >= 22;
         var hasBackgroundControls = settingsLength >= 24;
         var hasBlackPoint = settingsLength >= 25;
+        var hasGraticuleIntensity = settingsLength >= 26;
         this.setupSlider(mainGain, a.shift());
         this.setupSlider(exposure, a.shift());
         this.setupSlider(audioVolume, localSettings ? localSettings.audioVolume : "0");
@@ -1778,6 +1789,7 @@ var Controls = {
             this.setupSlider(contrast, a.shift());
         }
         if (hasBlackPoint) this.setupSlider(blackPoint, a.shift());
+        if (hasGraticuleIntensity) this.setupSlider(graticuleIntensity, a.shift());
         if (localSettings)
         {
             micCheckbox.checked = !!localSettings.microphone;
@@ -2144,6 +2156,7 @@ appShell.addEventListener('click', function(event)
     uniform float uEmissionRamp;
     uniform float uContrast;
     uniform float uBlackPoint;
+    uniform float uGraticuleIntensity;
     varying vec2 vTexCoord;
     varying vec2 vScreenCoord;
     void main (void)
@@ -2164,7 +2177,7 @@ appShell.addEventListener('click', function(event)
             vec3 sceneColour = mix(uBackgroundColour, emissionColour, tlight);
             vec3 gridColour = vec3(0.28, 0.065, 0.025);
             vec3 gradedScene = uBackgroundColour+(sceneColour-uBackgroundColour)*uContrast;
-            gl_FragColor.rgb = clamp(gradedScene+gridColour*graticule.r*1.15, 0.0, 1.0);
+            gl_FragColor.rgb = clamp(gradedScene+gridColour*graticule.r*uGraticuleIntensity, 0.0, 1.0);
             gl_FragColor.a= 1.0;
     }
 </script>

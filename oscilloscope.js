@@ -375,6 +375,7 @@ var Render =
 		this.outputShader.uEmissionRamp = gl.getUniformLocation(this.outputShader, "uEmissionRamp");
 		this.outputShader.uContrast = gl.getUniformLocation(this.outputShader, "uContrast");
 		this.outputShader.uBlackPoint = gl.getUniformLocation(this.outputShader, "uBlackPoint");
+		this.outputShader.uGraticuleIntensity = gl.getUniformLocation(this.outputShader, "uGraticuleIntensity");
 		this.outputShader.uCanvasAspect = gl.getUniformLocation(this.outputShader, "uCanvasAspect");
 
 		this.texturedShader = this.createShader("texturedVertex","texturedFragment");
@@ -546,6 +547,7 @@ var Render =
 		gl.uniform1f(this.outputShader.uEmissionRamp, controls.emissionRamp);
 		gl.uniform1f(this.outputShader.uContrast, controls.contrast);
 		gl.uniform1f(this.outputShader.uBlackPoint, controls.blackPoint);
+		gl.uniform1f(this.outputShader.uGraticuleIntensity, controls.graticuleIntensity);
 		this.drawTexture(this.lineTexture, this.blur1Texture, this.blur3Texture, this.screenTexture, this.graticuleTexture);
 	},
 
