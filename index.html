@@ -2164,7 +2164,7 @@ appShell.addEventListener('click', function(event)
             vec3 sceneColour = mix(uBackgroundColour, emissionColour, tlight);
             vec3 gridColour = vec3(0.28, 0.065, 0.025);
             vec3 gradedScene = uBackgroundColour+(sceneColour-uBackgroundColour)*uContrast;
-            gl_FragColor.rgb = clamp(gradedScene+gridColour*graticule.r, 0.0, 1.0);
+            gl_FragColor.rgb = clamp(gradedScene+gridColour*graticule.r*1.15, 0.0, 1.0);
             gl_FragColor.a= 1.0;
     }
 </script>
