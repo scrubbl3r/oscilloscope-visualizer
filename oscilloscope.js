@@ -368,6 +368,7 @@ var Render =
 		this.outputShader.uTexture2 = gl.getUniformLocation(this.outputShader, "uTexture2");
 		this.outputShader.uTexture3 = gl.getUniformLocation(this.outputShader, "uTexture3");
 		this.outputShader.uTexture4 = gl.getUniformLocation(this.outputShader, "uTexture4");
+		this.outputShader.uTexture5 = gl.getUniformLocation(this.outputShader, "uTexture5");
 		this.outputShader.uExposure = gl.getUniformLocation(this.outputShader, "uExposure");
 		this.outputShader.uCoreColour = gl.getUniformLocation(this.outputShader, "uCoreColour");
 		this.outputShader.uHaloColour = gl.getUniformLocation(this.outputShader, "uHaloColour");
@@ -432,6 +433,7 @@ var Render =
 	{
 		this.frameBuffer = gl.createFramebuffer();
 		this.lineTexture = this.makeTexture(1024, 1024);
+		this.freshLineTexture = this.makeTexture(1024, 1024);
 		this.blur1Texture = this.makeTexture(256,256);
 		this.blur2Texture = this.makeTexture(256, 256);
 		this.blur3Texture = this.makeTexture(32, 32);
@@ -479,6 +481,7 @@ var Render =
 			return [Math.max(1, Math.round(size*aspect)), size];
 		};
 		var lineSize = dimensions(1024);
+		this.resizeTexture(this.freshLineTexture, lineSize[0], lineSize[1]);
 		var tightGlowSize = dimensions(256);
 		var wideGlowSize = dimensions(32);
 		this.resizeTexture(this.lineTexture, lineSize[0], lineSize[1]);
@@ -493,6 +496,10 @@ var Render =
 	drawLineTexture : function(xPoints, yPoints)
 	{
     	this.fadeAmount = Math.pow(0.5, controls.persistence)*0.2*AudioSystem.bufferSize/512 ;
+		this.activateTargetTexture(this.freshLineTexture);
+		gl.clearColor(0.0, 0.0, 0.0, 1.0);
+		gl.clear(gl.COLOR_BUFFER_BIT);
+		this.drawLine(xPoints, yPoints);
 		this.activateTargetTexture(this.lineTexture);
 		this.fade();
 		//gl.clear(gl.COLOR_BUFFER_BIT);
@@ -550,7 +557,7 @@ var Render =
 		gl.uniform1f(this.outputShader.uBlackPoint, controls.blackPoint);
 		gl.uniform1f(this.outputShader.uGraticuleIntensity, controls.graticuleIntensity);
 		gl.uniform1f(this.outputShader.uOpticalPolish, controls.opticalPolish ? 1.0 : 0.0);
-		this.drawTexture(this.lineTexture, this.blur1Texture, this.blur3Texture, this.screenTexture, this.graticuleTexture);
+		this.drawTexture(this.lineTexture, this.blur1Texture, this.blur3Texture, this.screenTexture, this.graticuleTexture, this.freshLineTexture);
 	},
 
 	getColourFromHex : function(hexColour)
@@ -585,7 +592,7 @@ var Render =
 		gl.useProgram(program);
 	},
 
-	drawTexture : function(texture0, texture1, texture2, texture3, texture4)
+	drawTexture : function(texture0, texture1, texture2, texture3, texture4, texture5)
 	{
 		//gl.useProgram(this.program);
 		gl.enableVertexAttribArray(this.program.aPos);
@@ -620,6 +627,13 @@ var Render =
 			gl.activeTexture(gl.TEXTURE4);
 			gl.bindTexture(gl.TEXTURE_2D, texture4);
 			gl.uniform1i(this.program.uTexture4, 4);
+		}
+
+		if (texture5)
+		{
+			gl.activeTexture(gl.TEXTURE5);
+			gl.bindTexture(gl.TEXTURE_2D, texture5);
+			gl.uniform1i(this.program.uTexture5, 5);
 		}
 
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);

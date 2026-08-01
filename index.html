@@ -2162,6 +2162,7 @@ appShell.addEventListener('click', function(event)
     uniform sampler2D uTexture2; //big glow
     uniform sampler2D uTexture3; //screen
     uniform sampler2D uTexture4; //graticule
+    uniform sampler2D uTexture5; //fresh beam
     uniform float uExposure;
     uniform vec3 uCoreColour;
     uniform vec3 uHaloColour;
@@ -2211,14 +2212,21 @@ appShell.addEventListener('click', function(event)
             vec4 polishedLine = texture2D(uTexture0, bowedTexCoord);
             vec4 polishedTightGlow = texture2D(uTexture1, bowedTexCoord);
             vec4 polishedWideGlow = texture2D(uTexture2, bowedTexCoord);
+            vec4 freshLine = texture2D(uTexture5, bowedTexCoord);
 
             float edgeAmount = smoothstep(0.55, 1.25, length(edgeCoord));
-            float softenedCore = mix(polishedLine.r, polishedTightGlow.r, 0.12*edgeAmount);
+            float freshEnergy = freshLine.r;
+            float historyEnergy = max(polishedLine.r-freshEnergy, 0.0);
+            float historyHalo = max(polishedTightGlow.r-0.35*freshEnergy, 0.0);
+            float focusedFresh = mix(freshEnergy, polishedTightGlow.r, 0.12*edgeAmount);
+            float agedHistory = 0.72*historyEnergy+0.45*historyHalo;
+            float dwell = smoothstep(0.08, 0.65, polishedLine.r+0.5*polishedTightGlow.r);
             float phosphorNoise = mix(0.92, 1.08, screen.g);
             float phosphorVariation = 1.0+(opticalNoise(bowedTexCoord*9.0+vec2(17.0, 3.0))-0.5)*0.025;
             float wideEnergy = max(polishedWideGlow.r-0.025, 0.0);
-            float polishedLight = softenedCore + 1.1*phosphorNoise*polishedTightGlow.r;
-            polishedLight += 0.7*wideEnergy*(0.8+0.4*screen.g);
+            float polishedLight = focusedFresh+agedHistory;
+            polishedLight += mix(0.62, 0.82, dwell)*phosphorNoise*polishedTightGlow.r;
+            polishedLight += mix(0.45, 0.72, dwell)*wideEnergy*(0.8+0.4*screen.g);
             polishedLight *= phosphorVariation;
             float edgeFalloff = 1.0-0.08*smoothstep(0.55, 1.25, length(edgeCoord));
             polishedLight *= edgeFalloff;
