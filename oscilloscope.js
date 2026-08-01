@@ -381,6 +381,7 @@ var Render =
 		this.outputShader.uOpticalPolish = gl.getUniformLocation(this.outputShader, "uOpticalPolish");
 		this.outputShader.uOpticalTime = gl.getUniformLocation(this.outputShader, "uOpticalTime");
 		this.outputShader.uViewportSize = gl.getUniformLocation(this.outputShader, "uViewportSize");
+		this.outputShader.uSweepOn = gl.getUniformLocation(this.outputShader, "uSweepOn");
 		this.outputShader.uCanvasAspect = gl.getUniformLocation(this.outputShader, "uCanvasAspect");
 
 		this.texturedShader = this.createShader("texturedVertex","texturedFragment");
@@ -562,6 +563,7 @@ var Render =
 		gl.uniform1f(this.outputShader.uOpticalPolish, controls.opticalPolish ? 1.0 : 0.0);
 		gl.uniform1f(this.outputShader.uOpticalTime, (timeStamp || 0)*0.001);
 		gl.uniform2f(this.outputShader.uViewportSize, this.canvas.width, this.canvas.height);
+		gl.uniform1f(this.outputShader.uSweepOn, controls.sweepOn ? 1.0 : 0.0);
 		this.drawTexture(this.lineTexture, this.blur1Texture, this.blur3Texture, this.screenTexture, this.graticuleTexture, this.freshLineTexture);
 	},
 

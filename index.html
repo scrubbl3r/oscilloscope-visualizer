@@ -2177,6 +2177,7 @@ appShell.addEventListener('click', function(event)
     uniform float uOpticalPolish;
     uniform float uOpticalTime;
     uniform vec2 uViewportSize;
+    uniform float uSweepOn;
     varying vec2 vTexCoord;
     varying vec2 vScreenCoord;
 
@@ -2219,14 +2220,18 @@ appShell.addEventListener('click', function(event)
             float instability = 1.0-0.70*dwellProbe;
             vec2 jitterWave = vec2(sin(uOpticalTime*1.13+0.4), sin(uOpticalTime*0.87+2.1));
             vec2 beamTexCoord = bowedTexCoord+jitterWave*(0.35*instability)/max(uViewportSize, vec2(1.0));
+            float scanNoise = 2.0*opticalNoise(vec2(uOpticalTime*7.0, 23.0))-1.0;
+            float scanJitterPx = 1.25*scanNoise+0.18*sin(uOpticalTime*17.3);
+            vec2 freshBeamTexCoord = beamTexCoord+vec2(uSweepOn*scanJitterPx/max(uViewportSize.x, 1.0), 0.0);
             vec4 polishedLine = texture2D(uTexture0, beamTexCoord);
             vec4 polishedTightGlow = texture2D(uTexture1, bowedTexCoord);
             vec4 polishedWideGlow = texture2D(uTexture2, bowedTexCoord);
-            vec4 freshLine = texture2D(uTexture5, beamTexCoord);
+            vec4 freshReference = texture2D(uTexture5, beamTexCoord);
+            vec4 freshLine = texture2D(uTexture5, freshBeamTexCoord);
 
             float edgeAmount = smoothstep(0.55, 1.25, length(edgeCoord));
             float freshEnergy = freshLine.r;
-            float historyEnergy = max(polishedLine.r-freshEnergy, 0.0);
+            float historyEnergy = max(polishedLine.r-freshReference.r, 0.0);
             float historyHalo = max(polishedTightGlow.r-0.35*freshEnergy, 0.0);
             float focusBreath = 0.5+0.5*sin(uOpticalTime*0.43+1.7);
             float focusMix = 0.05*edgeAmount+instability*(0.003+0.005*focusBreath);
